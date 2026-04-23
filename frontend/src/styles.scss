@@ -1,23 +1,25 @@
-/* src/styles.scss — LUO Brand Design System */
+/* src/styles.scss — LUO Brand Design System — Dark Teal Edition */
 
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
 
 :root {
-  --black:      #1a1a1a;
-  --green:      #3ECFB2;
-  --teal:       #2aad94;
-  --green-light:#e8faf7;
-  --gray-50:    #f8f8f6;
-  --gray-100:   #ededeb;
-  --gray-200:   #d6d6d2;
-  --gray-400:   #9b9b96;
-  --gray-600:   #5e5e5a;
-  --gray-800:   #2c2c2a;
-  --white:      #fff;
-  --danger:     #e24b4a;
-  --warning:    #ef9f27;
-  --info:       #378add;
-  --purple:     #7c5cbf;
+  --black:       #0f2820;
+  --black-mid:   #1a4a35;
+  --green:       #3ECFB2;
+  --teal:        #2aad94;
+  --teal-dark:   #1a7d6b;
+  --green-light: #e0f5f1;
+  --gray-50:     #f5f7f6;
+  --gray-100:    #e8edeb;
+  --gray-200:    #ccd6d2;
+  --gray-400:    #8fa99f;
+  --gray-600:    #4a6a60;
+  --gray-800:    #1e3a30;
+  --white:       #fff;
+  --danger:      #e24b4a;
+  --warning:     #ef9f27;
+  --info:        #378add;
+  --purple:      #7c5cbf;
   --r-sm: 6px; --r-md: 10px; --r-lg: 14px;
 }
 
@@ -37,7 +39,7 @@ body {
 /* PAGE */
 .page { min-height: calc(100vh - 54px); }
 .page-hdr { margin-bottom: 24px; }
-.page-title { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+.page-title { font-size: 22px; font-weight: 700; letter-spacing: -.3px; color: var(--black); }
 .page-sub { font-size: 13px; color: var(--gray-400); margin-top: 2px; }
 
 /* CARD */
@@ -59,8 +61,7 @@ body {
 .stat-card.ar { border-left: 3px solid var(--danger); }
 .stat-card.ap { border-left: 3px solid var(--purple); }
 .stat-lbl { font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--gray-400); margin-bottom: 5px; }
-.stat-val { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; }
-.stat-sub { font-size: 12px; color: var(--gray-400); margin-top: 3px; }
+.stat-val { font-size: 28px; font-weight: 700; letter-spacing: -1px; line-height: 1; color: var(--black); }
 
 /* TABLE */
 .tbl-wrap { overflow-x: auto; }
@@ -73,7 +74,7 @@ tr.cp { cursor: pointer; }
 
 /* BADGES */
 .badge { display: inline-flex; align-items: center; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 4px; white-space: nowrap; }
-.bg  { background: var(--green-light); color: var(--teal); }
+.bg  { background: var(--green-light); color: var(--teal-dark); }
 .bb  { background: #e6f1fb; color: #185fa5; }
 .bo  { background: #faeeda; color: #854f0b; }
 .br  { background: #fcebeb; color: #a32d2d; }
@@ -113,10 +114,10 @@ textarea.fi { resize: vertical; }
 .fr2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 
 /* MODAL */
-.mb { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
+.mb { position: fixed; inset: 0; background: rgba(15,40,32,.55); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 40px 20px; overflow-y: auto; }
 .modal { background: var(--white); border-radius: var(--r-lg); width: 100%; max-width: 800px; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
 .mh { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--gray-100); }
-.mt { font-size: 16px; font-weight: 700; }
+.mt { font-size: 16px; font-weight: 700; color: var(--black); }
 .mbody { padding: 24px; max-height: 72vh; overflow-y: auto; }
 .mfoot { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--gray-100); }
 
@@ -125,7 +126,7 @@ textarea.fi { resize: vertical; }
 .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid var(--gray-200); border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .empty { text-align: center; padding: 40px; color: var(--gray-400); }
-.info-banner { background: var(--green-light); border: 1px solid #b5ede5; border-radius: var(--r-sm); padding: 10px 14px; font-size: 12px; color: var(--teal); margin-bottom: 16px; }
+.info-banner { background: var(--green-light); border: 1px solid #b5ede5; border-radius: var(--r-sm); padding: 10px 14px; font-size: 12px; color: var(--teal-dark); margin-bottom: 16px; }
 .toast { position: fixed; bottom: 24px; right: 24px; background: var(--black); color: white; padding: 12px 20px; border-radius: var(--r-md); font-size: 13px; z-index: 999; display: flex; align-items: center; gap: 10px; animation: slideIn .2s ease; }
 .toast.ok { border-left: 3px solid var(--green); }
 .toast.err { border-left: 3px solid var(--danger); }

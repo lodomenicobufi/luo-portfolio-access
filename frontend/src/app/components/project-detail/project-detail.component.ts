@@ -97,36 +97,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           }
         </div>
 
-        @if (activeTab() === 'checklist') {
-          <div class="card tab-card">
-            @for (doc of config()?.docFields||[]; track doc) {
-              <div class="chk-item">
-                <div style="display:flex;align-items:center;gap:10px;width:100%">
-                  <input type="checkbox" [id]="'d'+doc"
-                    [checked]="getChecklistEntry(doc)?.completato"
-                    (change)="toggleChecklist(doc, getChecklistEntry(doc))"
-                    [disabled]="!auth.isEditor"/>
-                  <label [for]="'d'+doc" [class.done]="getChecklistEntry(doc)?.completato" style="flex:1">{{ doc }}</label>
-                  @if (getChecklistEntry(doc)?.completato) { <span class="badge bg" style="font-size:10px">OK</span> }
-                </div>
-                @if (auth.isEditor) {
-                  <div style="display:flex;gap:6px;width:100%;padding-left:25px;margin-top:4px">
-                    <input class="fi" style="flex:1;font-size:12px" placeholder="Link documento..."
-                      [(ngModel)]="checklistLinks[doc]"
-                      (blur)="saveChecklistLink(doc, getChecklistEntry(doc))"/>
-                    @if (getChecklistEntry(doc)?.linkUrl) {
-                      <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank" class="btn btn-g btn-sm">Link</a>
-                    }
-                  </div>
-                }
-              </div>
-            }
-            <div style="margin-top:10px;font-size:12px;color:var(--gray-400)">
-              {{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} completati
-            </div>
-          </div>
-        }
-
         @if (activeTab() === 'task') {
           <div class="tab-card">
             @for (t of tasks(); track t.id) {
@@ -240,6 +210,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         }
 
+
         @if (activeTab() === 'ticket') {
           <div class="card tab-card">
             @if (auth.isEditor) {
@@ -292,6 +263,60 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         }
 
+
+        @if (activeTab() === 'checklist') {
+          <div class="card tab-card" style="padding:0;overflow:hidden">
+            <table class="chk-table">
+              <thead>
+                <tr>
+                  <th style="width:46%">Documento</th>
+                  <th>Link documento</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (doc of config()?.docFields||[]; track doc) {
+                  <tr [class.chk-done]="getChecklistEntry(doc)?.completato">
+                    <td>
+                      <div style="display:flex;align-items:center;gap:10px">
+                        <input type="checkbox"
+                          [checked]="getChecklistEntry(doc)?.completato"
+                          (change)="toggleChecklist(doc, getChecklistEntry(doc))"
+                          [disabled]="!auth.isEditor"
+                          style="width:15px;height:15px;accent-color:var(--teal);flex-shrink:0;cursor:pointer"/>
+                        <span [class.chk-label-done]="getChecklistEntry(doc)?.completato"
+                          style="font-size:13px">{{ doc }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      @if (auth.isEditor) {
+                        <div style="display:flex;gap:6px;align-items:center">
+                          <input class="fi" style="font-size:12px;padding:5px 8px"
+                            placeholder="Incolla link..."
+                            [(ngModel)]="checklistLinks[doc]"
+                            (blur)="saveChecklistLink(doc, getChecklistEntry(doc))"/>
+                          @if (getChecklistEntry(doc)?.linkUrl) {
+                            <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank"
+                              class="btn btn-g btn-sm">Apri</a>
+                          }
+                        </div>
+                      } @else {
+                        @if (getChecklistEntry(doc)?.linkUrl) {
+                          <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank"
+                            class="btn btn-g btn-sm">Apri documento</a>
+                        } @else {
+                          <span style="font-size:12px;color:var(--gray-400)">—</span>
+                        }
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <div style="padding:12px 16px;font-size:12px;color:var(--gray-400);border-top:1px solid var(--gray-100)">
+              {{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti completati
+            </div>
+          </div>
+        }
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
       }
     </div>
@@ -323,6 +348,12 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
     .task-num { width:28px; height:28px; border-radius:50%; background:var(--black); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
     .task-done .task-num { background:var(--green); color:var(--black); }
     .task-locked .task-num { background:var(--gray-200); color:var(--gray-400); }
+    .chk-table { width:100%; border-collapse:collapse; }
+    .chk-table th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:var(--gray-400); padding:10px 16px; border-bottom:1px solid var(--gray-100); text-align:left; background:var(--gray-50); }
+    .chk-table td { padding:9px 16px; border-bottom:1px solid var(--gray-100); vertical-align:middle; }
+    .chk-table tr:last-child td { border-bottom:none; }
+    .chk-done td { background:var(--green-light); }
+    .chk-label-done { text-decoration:line-through; color:var(--gray-400); }
     .subtask-block { border:0.5px solid var(--gray-100); border-radius:8px; margin-bottom:6px; overflow:hidden; }
     .subtask-block.subtask-done { border-left:3px solid var(--green); }
     .subtask-header { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; cursor:pointer; background:white; gap:10px; }
@@ -344,7 +375,7 @@ export class ProjectDetailComponent implements OnInit {
   tickets = signal<Ticket[]>([]);
   users = signal<User[]>([]);
   config = signal<AppConfig | null>(null);
-  activeTab = signal('checklist');
+  activeTab = signal('task');
   editMode = signal(false);
   toast = signal('');
   editForm: Partial<Project> = {};
@@ -358,9 +389,9 @@ export class ProjectDetailComponent implements OnInit {
     const doneCount = this.tasks().filter(t => t.stato === 'Completato').length;
     const openTickets = this.tickets().filter(t => !['Risolto','Chiuso'].includes(t.stato)).length;
     return [
-      { id:'checklist', label:'Checklist (' + this.completatiCount() + '/' + (this.config()?.docFields?.length||0) + ')' },
       { id:'task',      label:'Task (' + doneCount + '/' + this.tasks().length + ')' },
       { id:'ticket',    label:'Ticket SD (' + openTickets + ' aperti)' },
+      { id:'checklist', label:'Checklist (' + this.completatiCount() + '/' + (this.config()?.docFields?.length||0) + ')' },
     ];
   }
 
