@@ -275,3 +275,98 @@ export class GithubDataService {
     await this.writeFile('data/config.json', JSON.stringify(config, null, 2), 'Update config');
   }
 }
+
+  // ══════════════════════════════════════════════════════════════
+  // SUBTASKS
+  // ══════════════════════════════════════════════════════════════
+  async getSubTasks(taskId?: string, projectId?: string): Promise<any[]> {
+    try {
+      const csv = await this.readFile('data/subtasks.csv');
+      const all = this.parseCsv<any>(csv);
+      if (taskId) return all.filter((s: any) => s.taskId === taskId);
+      if (projectId) return all.filter((s: any) => s.projectId === projectId);
+      return all;
+    } catch { return []; }
+  }
+
+  async saveSubTasks(subtasks: any[]): Promise<void> {
+    const headers = ['id','nome','dataInizio','dataFine','owner','stato','taskId','projectId'];
+    await this.writeFile('data/subtasks.csv', this.toCsv(subtasks, headers), 'Update subtasks');
+  }
+
+  async createSubTask(s: Omit<any,'id'>): Promise<any> {
+    const all = await this.getSubTasks();
+    const ns = { ...s, id: this.uid() };
+    all.push(ns);
+    await this.saveSubTasks(all);
+    return ns;
+  }
+
+  async updateSubTask(id: string, updates: Partial<any>): Promise<void> {
+    const all = await this.getSubTasks();
+    const idx = all.findIndex((s: any) => s.id === id);
+    if (idx >= 0) { all[idx] = { ...all[idx], ...updates }; await this.saveSubTasks(all); }
+  }
+
+  async deleteSubTask(id: string): Promise<void> {
+    const all = await this.getSubTasks();
+    await this.saveSubTasks(all.filter((s: any) => s.id !== id));
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // TASK FISSI — inizializzazione alla creazione progetto
+  // ══════════════════════════════════════════════════════════════
+  async initProjectTasks(projectId: string, dataInizioProgetto: string): Promise<void> {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const allTasks = await this.getTasks();
+    // Se i task del progetto esistono già, non ricrearli
+    const existing = allTasks.filter(t => t.projectId === projectId);
+    if (existing.length > 0) return;
+    // Crea solo REQUISITI con data inizio, gli altri vuoti
+    const newTasks: Task[] = SEQUENCE.map((nome, i) => ({
+      id: this.uid(),
+      nome,
+      dataInizio: i === 0 ? dataInizioProgetto : '',
+      dataFine: '',
+      stato: 'Da fare',
+      projectId,
+    }));
+    const updated = [...allTasks, ...newTasks];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId'];
+    await this.writeFile('data/tasks.csv', this.toCsv(updated, headers), `Init tasks for project ${projectId}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  // TASK — aggiornamento con logica a cascata
+  // ══════════════════════════════════════════════════════════════
+  async updateTaskWithCascade(id: string, updates: Partial<Task>, allProjectTasks: Task[]): Promise<Task[]> {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const allTasks = await this.getTasks();
+    const idx = allTasks.findIndex(t => t.id === id);
+    if (idx < 0) return allProjectTasks;
+
+    allTasks[idx] = { ...allTasks[idx], ...updates };
+    const updatedTask = allTasks[idx];
+
+    // Logica cascata: se task completato + ha data fine → sblocca il successivo
+    const taskIdx = SEQUENCE.indexOf(updatedTask.nome);
+    if (
+      taskIdx >= 0 &&
+      taskIdx < SEQUENCE.length - 1 &&
+      updatedTask.stato === 'Completato' &&
+      updatedTask.dataFine
+    ) {
+      const nextNome = SEQUENCE[taskIdx + 1];
+      const nextIdx = allTasks.findIndex(t => t.projectId === updatedTask.projectId && t.nome === nextNome);
+      if (nextIdx >= 0 && allTasks[nextIdx].stato === 'Da fare' && !allTasks[nextIdx].dataInizio) {
+        // Calcola dataInizio = dataFine del precedente + 1 giorno
+        const nextDate = new Date(updatedTask.dataFine);
+        nextDate.setDate(nextDate.getDate() + 1);
+        allTasks[nextIdx].dataInizio = nextDate.toISOString().split('T')[0];
+      }
+    }
+
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId'];
+    await this.writeFile('data/tasks.csv', this.toCsv(allTasks, headers), `Update task ${updatedTask.nome}`);
+    return allTasks.filter(t => t.projectId === updatedTask.projectId);
+  }
