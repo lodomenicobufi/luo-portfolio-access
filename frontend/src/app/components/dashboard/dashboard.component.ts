@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, User, AppConfig } from '../../core/models';
+import { Project, User, AppConfig, Task } from '../../core/models';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -85,7 +85,7 @@ import { FormsModule } from '@angular/forms';
               <thead>
                 <tr>
                   <th>Nome</th><th>Priorità</th><th>Area</th><th>Owner</th>
-                  <th>Stato</th><th>Completamento</th><th>Scadenza</th>
+                  <th>Stato</th><th>Task in corso</th><th>Completamento</th><th>Scadenza</th>
                 </tr>
               </thead>
               <tbody>
@@ -97,12 +97,18 @@ import { FormsModule } from '@angular/forms';
                     <td>{{ ownerName(p.owner) }}</td>
                     <td><span class="badge" [class]="statoBadge(p.stato)">{{ p.stato }}</span></td>
                     <td>
+                      <div class="task-chip">
+                        <div class="task-dot" [style.background]="getActiveTaskColor(p.id)"></div>
+                        <span class="task-chip-text">{{ getActiveTask(p.id) }}</span>
+                      </div>
+                    </td>
+                    <td>
                       <div class="pbar-row">
                         <div class="pbar"><div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div></div>
                         <span class="pct-lbl">{{ p.completamento }}%</span>
                       </div>
                     </td>
-                    <td [class.text-danger]="isScaduto(p)">{{ fmtDate(p.dataFine) }}{{ isScaduto(p) ? ' ⚠' : '' }}</td>
+                    <td [class.text-danger]="isScaduto(p)">{{ fmtDate(p.dataFine) }}{{ isScaduto(p) ? ' !' : '' }}</td>
                   </tr>
                 }
               </tbody>
@@ -122,6 +128,9 @@ import { FormsModule } from '@angular/forms';
     .pct-lbl { font-size:11px; color:var(--gray-600); min-width:30px; }
     .text-danger { color:var(--danger); }
     .green { color:var(--green); }
+    .task-chip { display:inline-flex; align-items:center; gap:5px; background:var(--gray-100); border-radius:4px; padding:3px 8px; font-size:10px; font-weight:600; color:var(--gray-600); max-width:130px; }
+    .task-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .task-chip-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:.3px; }
   `]
 })
 export class DashboardComponent implements OnInit {
@@ -130,6 +139,7 @@ export class DashboardComponent implements OnInit {
 
   loading = signal(true);
   projects = signal<Project[]>([]);
+  tasks = signal<Task[]>([]);
   users = signal<User[]>([]);
   config = signal<AppConfig | null>(null);
 
@@ -156,9 +166,31 @@ export class DashboardComponent implements OnInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c] = await Promise.all([this.db.getProjects(), this.db.getUsers(), this.db.getConfig()]);
-    this.projects.set(p); this.users.set(u); this.config.set(c);
+    const [p, u, c, t] = await Promise.all([this.db.getProjects(), this.db.getUsers(), this.db.getConfig(), this.db.getTasks()]);
+    this.projects.set(p); this.users.set(u); this.config.set(c); this.tasks.set(t);
     this.loading.set(false);
+  }
+
+  getActiveTask(projectId: string): string {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const projectTasks = this.tasks().filter(t => t.projectId === projectId);
+    if (!projectTasks.length) return '—';
+    // Find last non-completed task or first in progress
+    const inProgress = projectTasks.find(t => t.stato === 'In corso');
+    if (inProgress) return inProgress.nome;
+    const daFare = projectTasks.find(t => t.stato === 'Da fare' && SEQUENCE.indexOf(t.nome) >= 0);
+    if (daFare) return daFare.nome;
+    const last = projectTasks.filter(t => t.stato === 'Completato').pop();
+    return last ? last.nome : '—';
+  }
+
+  getActiveTaskColor(projectId: string): string {
+    const projectTasks = this.tasks().filter(t => t.projectId === projectId);
+    const inProgress = projectTasks.find(t => t.stato === 'In corso');
+    if (inProgress) return '#378ADD';
+    const allDone = projectTasks.every(t => t.stato === 'Completato');
+    if (allDone) return '#3ECFB2';
+    return '#9b9b96';
   }
 
   ownerName(ownerId: string): string {
