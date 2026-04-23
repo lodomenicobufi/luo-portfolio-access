@@ -1,6 +1,6 @@
 id,nome,dataInizio,dataFine,stato,projectId
-t1,REQUISITI,2024-01-15,,Completato,p1
-t2,TEMPI E STIME,,,Da fare,p1
+t1,REQUISITI,2024-01-15,2026-04-24,Completato,p1
+t2,TEMPI E STIME,2026-04-25,,Da fare,p1
 t3,SVILUPPO,,,Da fare,p1
 t4,COLLAUDO LDT,,,Da fare,p1
 t5,COLLAUDO BU,,,Da fare,p1
