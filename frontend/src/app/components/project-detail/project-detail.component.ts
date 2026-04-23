@@ -106,20 +106,19 @@ import { Project, Task, ChecklistItem, Ticket, User, AppConfig } from '../../cor
         @if (activeTab() === 'checklist') {
           <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0">
             @for (doc of config()?.docFields||[]; track doc) {
-              @let entry = checklistMap()[doc];
               <div class="chk-item">
                 <div style="display:flex;align-items:center;gap:10px;width:100%">
-                  <input type="checkbox" [id]="'d'+doc" [checked]="entry?.completato"
-                    (change)="toggleChecklist(doc, entry)" [disabled]="!auth.isEditor"/>
-                  <label [for]="'d'+doc" [class.done]="entry?.completato" style="flex:1">{{ doc }}</label>
-                  @if (entry?.completato) { <span class="badge bg" style="font-size:10px">✓ OK</span> }
+                  <input type="checkbox" [id]="'d'+doc" [checked]="getChecklistEntry(doc)?.completato"
+                    (change)="toggleChecklist(doc, getChecklistEntry(doc))" [disabled]="!auth.isEditor"/>
+                  <label [for]="'d'+doc" [class.done]="getChecklistEntry(doc)?.completato" style="flex:1">{{ doc }}</label>
+                  @if (getChecklistEntry(doc)?.completato) { <span class="badge bg" style="font-size:10px">✓ OK</span> }
                 </div>
                 @if (auth.isEditor) {
                   <div style="display:flex;gap:6px;width:100%;padding-left:25px;margin-top:4px">
                     <input class="fi" style="flex:1;font-size:12px" placeholder="Link documento..."
-                      [(ngModel)]="checklistLinks[doc]" (blur)="saveChecklistLink(doc, entry)"/>
-                    @if (entry?.linkUrl) {
-                      <a [href]="entry.linkUrl" target="_blank" class="btn btn-g btn-sm">🔗</a>
+                      [(ngModel)]="checklistLinks[doc]" (blur)="saveChecklistLink(doc, getChecklistEntry(doc))"/>
+                    @if (getChecklistEntry(doc)?.linkUrl) {
+                      <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank" class="btn btn-g btn-sm">🔗</a>
                     }
                   </div>
                 }
