@@ -221,7 +221,10 @@ export class ProjectsComponent implements OnInit {
       if (this.editingProject) {
         await this.db.updateProject(this.editingProject.id, this.form as Project);
       } else {
-        await this.db.createProject(this.form as Omit<Project,'id'>);
+        // Crea progetto e inizializza i 7 task fissi
+        const created = await this.db.createProject(this.form as Omit<Project,'id'>);
+        const dataInizio = this.form.dataInizio || new Date().toISOString().split('T')[0];
+        await this.db.initProjectTasks(created.id, dataInizio);
       }
       await this.load();
       this.closeModal();
