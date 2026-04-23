@@ -2,4 +2,4 @@ id,name,email,role,active
 u1,Marco Bianchi,marco.bianchi@luo.it,admin,true
 u2,Sara Russo,sara.russo@luo.it,editor,true
 u3,Luca Ferrari,luca.ferrari@luo.it,editor,true
-u4,Anna Colombo,anna.colombo@luo.it,viewer,true
+u4,Anna Colombo,anna.colombo@luo.it,viewer,false
