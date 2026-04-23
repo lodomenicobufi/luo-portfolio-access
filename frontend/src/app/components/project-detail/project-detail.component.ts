@@ -197,21 +197,39 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                       <div style="font-size:12px;color:var(--gray-400);padding:8px 0">Nessun sotto-task</div>
                     }
                     @for (st of getSubTasksForTask(t.id); track st.id) {
-                      <div class="subtask-row">
-                        <div style="flex:1">
-                          <div style="font-weight:600;font-size:13px">{{ st.nome }}</div>
-                          <div style="font-size:11px;color:var(--gray-400)">
-                            {{ fmtDate(st.dataInizio) }} - {{ fmtDate(st.dataFine) }}
-                            @if (st.owner) { | <span style="color:var(--teal)">{{ st.owner }}</span> }
+                      <div class="subtask-block" [class.subtask-done]="st.stato==='Completato'">
+                        <div class="subtask-header" (click)="toggleSubTaskExpand(st.id)">
+                          <div style="flex:1">
+                            <div style="font-weight:600;font-size:13px">{{ st.nome }}</div>
+                            <div style="font-size:11px;color:var(--gray-400)">
+                              {{ fmtDate(st.dataInizio) }} - {{ fmtDate(st.dataFine) }}
+                              @if (st.owner) { · <span style="color:var(--teal)">{{ st.owner }}</span> }
+                            </div>
+                          </div>
+                          <div style="display:flex;align-items:center;gap:8px">
+                            <span class="badge" [class]="taskBadge(st.stato)">{{ st.stato }}</span>
+                            <span style="font-size:11px;color:var(--gray-400)">{{ expandedSubTaskId()===st.id ? 'v' : '>' }}</span>
                           </div>
                         </div>
-                        @if (auth.isEditor) {
-                          <select class="fi" style="width:auto;font-size:12px" [(ngModel)]="st.stato" (change)="updateSubTaskStatus(st)">
-                            @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
-                          </select>
-                          <button class="icon-btn-sm" style="color:var(--danger)" (click)="removeSubTask(st)">X</button>
-                        } @else {
-                          <span class="badge" [class]="taskBadge(st.stato)">{{ st.stato }}</span>
+                        @if (expandedSubTaskId() === st.id) {
+                          <div class="subtask-body">
+                            <div class="fr3" style="margin-bottom:10px">
+                              <div class="fg"><label class="fl">Data Inizio</label>
+                                <input class="fi" type="date" [value]="st.dataInizio" disabled/></div>
+                              <div class="fg"><label class="fl">Data Fine</label>
+                                <input class="fi" type="date" [value]="st.dataFine" disabled/></div>
+                              <div class="fg"><label class="fl">Owner</label>
+                                <input class="fi" [value]="st.owner||'—'" disabled/></div>
+                            </div>
+                            @if (auth.isEditor) {
+                              <div style="display:flex;gap:8px;align-items:center">
+                                <select class="fi" style="flex:1;font-size:12px" [(ngModel)]="st.stato" (change)="updateSubTaskStatus(st)">
+                                  @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
+                                </select>
+                                <button class="btn btn-g btn-sm" style="color:var(--danger)" (click)="removeSubTask(st)">Elimina</button>
+                              </div>
+                            }
+                          </div>
                         }
                       </div>
                     }
@@ -305,7 +323,11 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
     .task-num { width:28px; height:28px; border-radius:50%; background:var(--black); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
     .task-done .task-num { background:var(--green); color:var(--black); }
     .task-locked .task-num { background:var(--gray-200); color:var(--gray-400); }
-    .subtask-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:6px; background:white; margin-bottom:6px; border:1px solid var(--gray-100); }
+    .subtask-block { border:0.5px solid var(--gray-100); border-radius:8px; margin-bottom:6px; overflow:hidden; }
+    .subtask-block.subtask-done { border-left:3px solid var(--green); }
+    .subtask-header { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; cursor:pointer; background:white; gap:10px; }
+    .subtask-header:hover { background:var(--gray-50); }
+    .subtask-body { padding:12px; border-top:0.5px solid var(--gray-100); background:var(--gray-50); }
   `]
 })
 export class ProjectDetailComponent implements OnInit {
@@ -328,6 +350,7 @@ export class ProjectDetailComponent implements OnInit {
   editForm: Partial<Project> = {};
   checklistLinks: Record<string, string> = {};
   expandedTaskId = signal<string>('');
+  expandedSubTaskId = signal<string>('');
   newSubTaskMap: Record<string, Record<string, string>> = {};
   newTicket: Partial<Ticket> = { titolo:'', descrizione:'', stato:'Aperto', priorita:'Media', riferimentoSD:'', dataApertura: new Date().toISOString().split('T')[0], note:'' };
 
@@ -336,7 +359,7 @@ export class ProjectDetailComponent implements OnInit {
     const openTickets = this.tickets().filter(t => !['Risolto','Chiuso'].includes(t.stato)).length;
     return [
       { id:'checklist', label:'Checklist (' + this.completatiCount() + '/' + (this.config()?.docFields?.length||0) + ')' },
-      { id:'task',      label:'Workflow (' + doneCount + '/' + this.tasks().length + ')' },
+      { id:'task',      label:'Task (' + doneCount + '/' + this.tasks().length + ')' },
       { id:'ticket',    label:'Ticket SD (' + openTickets + ' aperti)' },
     ];
   }
@@ -408,6 +431,7 @@ export class ProjectDetailComponent implements OnInit {
     return !prev || prev.stato !== 'Completato' || !prev.dataFine;
   }
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
+  toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async updateTaskCascade(t: Task): Promise<void> {
     const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
     this.tasks.set(updated);
