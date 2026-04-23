@@ -1,6 +1,6 @@
 id,documento,completato,linkUrl,projectId
 c1,Analisi dei requisiti,false,,p1
-c2,Documento di progetto,true,,p1
+c2,Documento di progetto,false,,p1
 c3,Test,false,,p1
 c4,Analisi dei requisiti,true,,p2
 c5,Documento di progetto,false,,p2
