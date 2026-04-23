@@ -273,6 +273,10 @@ export class ProjectDetailComponent implements OnInit {
     { id:'ticket', label:'Ticket SD' },
   ];
 
+  getChecklistEntry(doc: string): ChecklistItem | undefined {
+    return this.checklistMap()[doc];
+  }
+
   checklistMap(): Record<string, ChecklistItem> {
     const m: Record<string, ChecklistItem> = {};
     this.checklist().forEach(c => { m[c.documento] = c; });
