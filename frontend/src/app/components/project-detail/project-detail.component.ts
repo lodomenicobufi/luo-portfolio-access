@@ -5,7 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, Task, ChecklistItem, Ticket, User, AppConfig } from '../../core/models';
+import { Project, Task, ChecklistItem, Ticket, User, AppConfig, TASK_SEQUENCE } from '../../core/models';
+type SubTask = any;
 
 @Component({
   selector: 'app-project-detail',
@@ -132,40 +133,105 @@ import { Project, Task, ChecklistItem, Ticket, User, AppConfig } from '../../cor
 
         <!-- TAB TASK -->
         @if (activeTab() === 'task') {
-          <div class="card" style="margin-top:0;border-top-left-radius:0;border-top-right-radius:0">
-            @if (auth.isEditor) {
-              <div style="background:var(--green-light);border-radius:8px;padding:14px;margin-bottom:16px">
-                <div style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--teal)">Aggiungi Task</div>
-                <div class="fr3">
-                  <input class="fi" placeholder="Nome task *" [(ngModel)]="newTask.nome"/>
-                  <input class="fi" type="date" [(ngModel)]="newTask.dataInizio"/>
-                  <input class="fi" type="date" [(ngModel)]="newTask.dataFine"/>
-                </div>
-                <div style="display:flex;gap:8px;margin-top:8px">
-                  <select class="fi" style="flex:1" [(ngModel)]="newTask.stato">
-                    @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
-                  </select>
-                  <button class="btn btn-p btn-sm" (click)="addTask()">+ Aggiungi</button>
-                </div>
-              </div>
-            }
+          <div style="margin-top:0">
             @for (t of tasks(); track t.id) {
-              <div class="task-row">
-                <div>
-                  <div style="font-weight:600;font-size:13px">{{ t.nome }}</div>
-                  <div style="font-size:11px;color:var(--gray-400)">{{ fmtDate(t.dataInizio) }} → {{ fmtDate(t.dataFine) }}</div>
+              <div class="task-block" [class.task-locked]="isTaskLocked(t)" [class.task-done]="t.stato==='Completato'">
+                <!-- HEADER TASK -->
+                <div class="task-block-header" (click)="toggleTaskExpand(t.id)">
+                  <div style="display:flex;align-items:center;gap:10px;flex:1">
+                    <div class="task-num">{{ getTaskOrdine(t) }}</div>
+                    <div>
+                      <div style="font-weight:700;font-size:14px;letter-spacing:.2px">{{ t.nome }}</div>
+                      <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
+                        {{ fmtDate(t.dataInizio) }}
+                        @if (t.dataFine) { → {{ fmtDate(t.dataFine) }} }
+                        @if (isTaskLocked(t)) { <span style="color:var(--warning)"> · 🔒 In attesa del task precedente</span> }
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    @if (auth.isEditor && !isTaskLocked(t)) {
+                      <select class="fi" style="width:auto;font-size:12px" [(ngModel)]="t.stato"
+                        (change)="updateTaskCascade(t)" (click)="$event.stopPropagation()">
+                        @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
+                      </select>
+                    } @else {
+                      <span class="badge" [class]="taskBadge(t.stato)">{{ t.stato }}</span>
+                    }
+                    <span style="color:var(--gray-400);font-size:12px">{{ expandedTaskId()===t.id ? '▲' : '▼' }}</span>
+                  </div>
                 </div>
-                @if (auth.isEditor) {
-                  <select class="fi" style="width:auto;font-size:12px" [(ngModel)]="t.stato" (change)="updateTaskStatus(t)">
-                    @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
-                  </select>
-                  <button class="icon-btn-sm" (click)="deleteTask(t)">🗑</button>
-                } @else {
-                  <span class="badge" [class]="taskBadge(t.stato)">{{ t.stato }}</span>
+
+                <!-- BODY TASK (espanso) -->
+                @if (expandedTaskId() === t.id) {
+                  <div class="task-block-body">
+                    <!-- DATE -->
+                    <div class="fr2" style="margin-bottom:16px">
+                      <div class="fg">
+                        <label class="fl">Data Inizio</label>
+                        <input class="fi" type="date" [value]="t.dataInizio" disabled/>
+                      </div>
+                      <div class="fg">
+                        <label class="fl">Data Fine</label>
+                        @if (auth.isEditor && !isTaskLocked(t)) {
+                          <input class="fi" type="date" [(ngModel)]="t.dataFine"
+                            (change)="updateTaskCascade(t)"/>
+                        } @else {
+                          <input class="fi" type="date" [value]="t.dataFine" disabled/>
+                        }
+                      </div>
+                    </div>
+
+                    <!-- SOTTO-TASK -->
+                    <div class="sec-div" style="margin-top:8px">Sotto-task</div>
+                    @if (auth.isEditor && !isTaskLocked(t)) {
+                      <div style="background:var(--gray-50);border-radius:8px;padding:12px;margin-bottom:12px">
+                        <div style="font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Nuovo sotto-task</div>
+                        <div class="fr2" style="margin-bottom:8px">
+                          <input class="fi" placeholder="Nome sotto-task *" [(ngModel)]="newSubTask[t.id].nome"/>
+                          <select class="fi" [(ngModel)]="newSubTask[t.id].owner">
+                            <option value="">— Owner —</option>
+                            @for (o of config()?.ownerSubtask||[]; track o){ <option>{{o}}</option> }
+                          </select>
+                        </div>
+                        <div class="fr3" style="margin-bottom:8px">
+                          <input class="fi" type="date" [(ngModel)]="newSubTask[t.id].dataInizio" title="Data inizio"/>
+                          <input class="fi" type="date" [(ngModel)]="newSubTask[t.id].dataFine" title="Data fine"/>
+                          <select class="fi" [(ngModel)]="newSubTask[t.id].stato">
+                            @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
+                          </select>
+                        </div>
+                        <button class="btn btn-p btn-sm" (click)="addSubTask(t)">+ Aggiungi sotto-task</button>
+                      </div>
+                    }
+
+                    @if (getSubTasksForTask(t.id).length === 0) {
+                      <div style="font-size:12px;color:var(--gray-400);padding:8px 0">Nessun sotto-task</div>
+                    }
+                    @for (st of getSubTasksForTask(t.id); track st.id) {
+                      <div class="subtask-row">
+                        <div style="flex:1">
+                          <div style="font-weight:600;font-size:13px">{{ st.nome }}</div>
+                          <div style="font-size:11px;color:var(--gray-400)">
+                            {{ fmtDate(st.dataInizio) }} → {{ fmtDate(st.dataFine) }}
+                            @if (st.owner) { · <span style="color:var(--teal)">{{ st.owner }}</span> }
+                          </div>
+                        </div>
+                        @if (auth.isEditor) {
+                          <select class="fi" style="width:auto;font-size:12px" [(ngModel)]="st.stato"
+                            (change)="updateSubTaskStatus(st)">
+                            @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
+                          </select>
+                          <button class="icon-btn-sm" style="color:var(--danger)" (click)="removeSubTask(st)">🗑</button>
+                        } @else {
+                          <span class="badge" [class]="taskBadge(st.stato)">{{ st.stato }}</span>
+                        }
+                      </div>
+                    }
+                  </div>
                 }
               </div>
             }
-            @if (tasks().length === 0) { <div class="empty">Nessun task</div> }
           </div>
         }
 
@@ -233,10 +299,8 @@ import { Project, Task, ChecklistItem, Ticket, User, AppConfig } from '../../cor
     .tabs { display:flex; gap:2px; border-bottom:1px solid var(--gray-100); }
     .tab { font-size:13px; font-weight:500; padding:8px 16px; border:none; background:none; cursor:pointer; color:var(--gray-400); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
     .tab.active { color:var(--teal); border-bottom-color:var(--green); }
-    .card { border-top-left-radius:0; border-top-right-radius:0; }
     .chk-item { display:flex; flex-direction:column; gap:4px; padding:9px 12px; border-radius:6px; background:var(--gray-50); margin-bottom:6px; }
     label.done { text-decoration:line-through; color:var(--gray-400); }
-    .task-row { display:grid; grid-template-columns:1fr auto auto; gap:10px; align-items:center; padding:10px 12px; border-radius:6px; background:var(--gray-50); margin-bottom:6px; }
     .ticket-row { display:flex; gap:10px; padding:12px; border-radius:6px; background:var(--gray-50); margin-bottom:8px; border-left:3px solid var(--info); }
     .ticket-row.chiuso { border-left-color:var(--green); opacity:.75; }
     .icon-btn-sm { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 4px; }
@@ -244,6 +308,18 @@ import { Project, Task, ChecklistItem, Ticket, User, AppConfig } from '../../cor
     .pbar { height:6px; background:var(--gray-100); border-radius:3px; overflow:hidden; width:80px; display:inline-block; }
     .pfill.hi { height:100%; border-radius:3px; background:var(--green); }
     .sec-div { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--gray-400); margin-bottom:14px; padding-bottom:6px; border-bottom:1px solid var(--gray-100); }
+    /* TASK BLOCK */
+    .task-block { background:white; border:1px solid var(--gray-100); border-radius:10px; margin-bottom:10px; overflow:hidden; transition:all .2s; }
+    .task-block.task-locked { opacity:.6; }
+    .task-block.task-done { border-left:4px solid var(--green); }
+    .task-block-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; gap:12px; }
+    .task-block-header:hover { background:var(--gray-50); }
+    .task-block-body { padding:16px; border-top:1px solid var(--gray-100); background:var(--gray-50); }
+    .task-num { width:28px; height:28px; border-radius:50%; background:var(--black); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+    .task-done .task-num { background:var(--green); color:var(--black); }
+    .task-locked .task-num { background:var(--gray-200); color:var(--gray-400); }
+    /* SUBTASK */
+    .subtask-row { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:6px; background:white; margin-bottom:6px; border:1px solid var(--gray-100); }
   `]
 })
 export class ProjectDetailComponent implements OnInit {
@@ -255,6 +331,7 @@ export class ProjectDetailComponent implements OnInit {
   saving = signal(false);
   project = signal<Project | null>(null);
   tasks = signal<Task[]>([]);
+  subtasks = signal<SubTask[]>([]);
   checklist = signal<ChecklistItem[]>([]);
   tickets = signal<Ticket[]>([]);
   users = signal<User[]>([]);
@@ -264,14 +341,19 @@ export class ProjectDetailComponent implements OnInit {
   toast = signal('');
   editForm: Partial<Project> = {};
   checklistLinks: Record<string, string> = {};
-  newTask: Partial<Task> = { nome:'', dataInizio:'', dataFine:'', stato:'Da fare' };
+  expandedTaskId = signal<string>('');
+  newSubTask: Record<string, Partial<SubTask>> = {};
   newTicket: Partial<Ticket> = { titolo:'', descrizione:'', stato:'Aperto', priorita:'Media', riferimentoSD:'', dataApertura: new Date().toISOString().split('T')[0], note:'' };
 
-  tabs = [
-    { id:'checklist', label:'Checklist Documenti' },
-    { id:'task', label:'Task' },
-    { id:'ticket', label:'Ticket SD' },
-  ];
+  get tabs() {
+    const taskCount = this.tasks().length;
+    const doneCount = this.tasks().filter(t => t.stato === 'Completato').length;
+    return [
+      { id:'checklist', label:\`Checklist (\${this.completatiCount()}/\${this.config()?.docFields?.length||0})\` },
+      { id:'task',      label:\`Workflow (\${doneCount}/\${taskCount})\` },
+      { id:'ticket',    label:\`Ticket SD (\${this.tickets().filter(t=>!['Risolto','Chiuso'].includes(t.stato)).length} aperti)\` },
+    ];
+  }
 
   getChecklistEntry(doc: string): ChecklistItem | undefined {
     return this.checklistMap()[doc];
@@ -292,17 +374,24 @@ export class ProjectDetailComponent implements OnInit {
 
   async loadAll(id: string) {
     this.loading.set(true);
-    const [projects, tasks, checklist, tickets, users, config] = await Promise.all([
-      this.db.getProjects(), this.db.getTasks(id), this.db.getChecklist(id),
-      this.db.getTickets(id), this.db.getUsers(), this.db.getConfig()
+    const [projects, tasks, subtasks, checklist, tickets, users, config] = await Promise.all([
+      this.db.getProjects(), this.db.getTasks(id), this.db.getSubTasks(undefined, id),
+      this.db.getChecklist(id), this.db.getTickets(id), this.db.getUsers(), this.db.getConfig()
     ]);
     const proj = projects.find(p => p.id === id) || null;
     this.project.set(proj);
     this.tasks.set(tasks);
+    this.subtasks.set(subtasks);
     this.checklist.set(checklist);
     this.tickets.set(tickets);
     this.users.set(users);
     this.config.set(config);
+    // Init newSubTask map per ogni task
+    tasks.forEach(t => {
+      if (!this.newSubTask[t.id]) {
+        this.newSubTask[t.id] = { nome:'', dataInizio:'', dataFine:'', owner:'', stato: config?.statiTask?.[0]||'Da fare' };
+      }
+    });
     if (proj) {
       this.editForm = { ...proj };
       checklist.forEach(c => { this.checklistLinks[c.documento] = c.linkUrl || ''; });
@@ -334,23 +423,59 @@ export class ProjectDetailComponent implements OnInit {
     this.showToast('Link salvato');
   }
 
-  async addTask() {
-    if (!this.newTask.nome) return;
+  // ── Task a cascata ──────────────────────────────────────────
+  getTaskOrdine(t: Task): number {
+    return (TASK_SEQUENCE as readonly string[]).indexOf(t.nome) + 1;
+  }
+
+  isTaskLocked(t: Task): boolean {
+    const idx = (TASK_SEQUENCE as readonly string[]).indexOf(t.nome);
+    if (idx === 0) return false; // REQUISITI sempre sbloccato
+    const prevNome = TASK_SEQUENCE[idx - 1];
+    const prev = this.tasks().find(x => x.projectId === t.projectId && x.nome === prevNome);
+    return !prev || prev.stato !== 'Completato' || !prev.dataFine;
+  }
+
+  toggleTaskExpand(id: string): void {
+    this.expandedTaskId.set(this.expandedTaskId() === id ? '' : id);
+  }
+
+  async updateTaskCascade(t: Task): Promise<void> {
     const projectId = this.project()!.id;
-    await this.db.createTask({ ...this.newTask, projectId } as Omit<Task,'id'>);
-    this.tasks.set(await this.db.getTasks(projectId));
-    this.newTask = { nome:'', dataInizio:'', dataFine:'', stato: this.config()?.statiTask[0]||'Da fare' };
-    this.showToast('Task aggiunto');
+    const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
+    this.tasks.set(updated);
+    // Aggiorna newSubTask map per nuovi task sbloccati
+    updated.forEach(task => {
+      if (!this.newSubTask[task.id]) {
+        this.newSubTask[task.id] = { nome:'', dataInizio:'', dataFine:'', owner:'', stato: this.config()?.statiTask?.[0]||'Da fare' };
+      }
+    });
+    this.showToast('Task aggiornato');
   }
 
-  async updateTaskStatus(t: Task) {
-    await this.db.updateTask(t.id, { stato: t.stato });
+  // ── Sotto-task ───────────────────────────────────────────────
+  getSubTasksForTask(taskId: string): SubTask[] {
+    return this.subtasks().filter((s: SubTask) => s.taskId === taskId);
   }
 
-  async deleteTask(t: Task) {
-    if (!confirm(`Eliminare "${t.nome}"?`)) return;
-    await this.db.deleteTask(t.id);
-    this.tasks.set(await this.db.getTasks(this.project()!.id));
+  async addSubTask(t: Task): Promise<void> {
+    const ns = this.newSubTask[t.id];
+    if (!ns?.nome) { this.showToast('Inserisci un nome per il sotto-task'); return; }
+    const projectId = this.project()!.id;
+    const created = await this.db.createSubTask({ ...ns, taskId: t.id, projectId });
+    this.subtasks.update(s => [...s, created]);
+    this.newSubTask[t.id] = { nome:'', dataInizio:'', dataFine:'', owner:'', stato: this.config()?.statiTask?.[0]||'Da fare' };
+    this.showToast('Sotto-task aggiunto');
+  }
+
+  async updateSubTaskStatus(st: SubTask): Promise<void> {
+    await this.db.updateSubTask(st.id, { stato: st.stato });
+  }
+
+  async removeSubTask(st: SubTask): Promise<void> {
+    if (!confirm(`Eliminare "${st.nome}"?`)) return;
+    await this.db.deleteSubTask(st.id);
+    this.subtasks.update(s => s.filter((x: SubTask) => x.id !== st.id));
   }
 
   async addTicket() {
