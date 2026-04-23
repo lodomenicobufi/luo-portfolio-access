@@ -1,0 +1,4 @@
+id,titolo,descrizione,stato,priorita,riferimentoSD,dataApertura,dataChiusura,note,projectId
+tk1,Problema accesso LDAP,Gli utenti non riescono ad autenticarsi tramite LDAP,In lavorazione,Alta,INC-0012345,2024-05-10,,,p1
+tk2,Performance pagine lente,Tempi di risposta superiori ai 3 secondi,Aperto,Media,INC-0012467,2024-06-01,,,p1
+tk3,Errore provisioning VM,Fallisce la creazione automatica delle VM su Azure,Risolto,Critica,INC-0011890,2024-04-20,2024-04-25,Risolto rinnovando il certificato,p2

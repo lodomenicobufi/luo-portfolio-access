@@ -1,0 +1,7 @@
+id,nome,dataInizio,dataFine,stato,projectId
+t1,Analisi requisiti utenti,2024-01-15,2024-02-15,Completato,p1
+t2,Design architettura,2024-02-16,2024-03-31,Completato,p1
+t3,Sviluppo modulo anagrafica,2024-04-01,2024-06-30,In corso,p1
+t4,Assessment infrastruttura attuale,2024-03-01,2024-04-15,Completato,p2
+t5,Piano migrazione workload,2024-04-16,2024-06-30,In corso,p2
+t6,Configurazione ambiente staging,2024-07-01,2024-09-30,Da fare,p2

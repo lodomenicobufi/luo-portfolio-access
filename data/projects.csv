@@ -1,0 +1,6 @@
+id,nome,descrizione,tipologia,area,businessUnit,fornitore,owner,stato,dataInizio,dataFine,completamento,documentazione,priorita,repositoryUrl
+p1,Portale HR Digitale,Digitalizzazione dei processi HR aziendali,Sviluppo,HR,Corporate,Fornitore A,u1,In corso,2024-01-15,2024-08-30,65,parziale,Alta,
+p2,Migrazione Cloud,Migrazione infrastruttura on-premise su Azure,Infrastruttura,IT,Digital,Fornitore B,u2,In corso,2024-03-01,2024-12-31,40,parziale,Critica,
+p3,CRM 2.0,Aggiornamento piattaforma CRM con nuovi moduli,Sviluppo,Marketing,B2B,Interno,u3,Pianificazione,2024-06-01,2025-03-31,10,non necessaria,Media,
+p4,Compliance GDPR 2024,Aggiornamento processi e documentazione privacy,Compliance,Finance,Corporate,Interno,u1,Completato,2023-09-01,2024-02-28,100,totale,Alta,
+p5,Formazione Agile Teams,Piano formativo metodologie agili per i team IT,Formazione,IT,Digital,Interno,u2,In attesa,2024-04-01,2024-09-30,25,parziale,Bassa,
