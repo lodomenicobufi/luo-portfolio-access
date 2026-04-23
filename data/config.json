@@ -1,11 +1,76 @@
 {
-  "tipologie": ["Sviluppo", "Infrastruttura", "Formazione", "Processo", "Compliance", "Altro"],
-  "aree": ["IT", "Finance", "HR", "Operations", "Marketing", "Legal", "Sales"],
-  "businessUnits": ["Corporate", "Retail", "Digital", "B2B"],
-  "fornitori": ["Interno", "Fornitore A", "Fornitore B", "Consulenza Esterna"],
-  "statiProgetto": ["Pianificazione", "In corso", "In attesa", "On Hold", "Completato", "Annullato"],
-  "statiTask": ["Da fare", "In corso", "Bloccato", "Completato"],
-  "priorita": ["Critica", "Alta", "Media", "Bassa"],
-  "statiTicket": ["Aperto", "In lavorazione", "Attesa risposta", "Risolto", "Chiuso"],
-  "docFields": ["Analisi dei requisiti", "Documento di progetto", "Documento Privacy BD", "Test", "Documento messa in produzione", "Manuale utente", "Service Activation", "Benefici ottenuti"]
+  "tipologie": [
+    "Sviluppo",
+    "Infrastruttura",
+    "Formazione",
+    "Processo",
+    "Compliance",
+    "Altro"
+  ],
+  "aree": [
+    "IT",
+    "Finance",
+    "HR",
+    "Operations",
+    "Marketing",
+    "Legal",
+    "Sales"
+  ],
+  "businessUnits": [
+    "Corporate",
+    "Retail",
+    "Digital",
+    "B2B"
+  ],
+  "fornitori": [
+    "Interno",
+    "Fornitore A",
+    "Fornitore B",
+    "Consulenza Esterna"
+  ],
+  "statiProgetto": [
+    "Pianificazione",
+    "In corso",
+    "In attesa",
+    "On Hold",
+    "Completato",
+    "Annullato"
+  ],
+  "statiTask": [
+    "Da fare",
+    "In corso",
+    "Bloccato",
+    "Completato"
+  ],
+  "priorita": [
+    "Critica",
+    "Alta",
+    "Media",
+    "Bassa"
+  ],
+  "statiTicket": [
+    "Aperto",
+    "In lavorazione",
+    "Attesa risposta",
+    "Risolto",
+    "Chiuso"
+  ],
+  "docFields": [
+    "Analisi dei requisiti",
+    "Documento di progetto",
+    "Documento Privacy BD",
+    "Test",
+    "Documento messa in produzione",
+    "Manuale utente",
+    "Service Activation",
+    "Benefici ottenuti"
+  ],
+  "ownerSubtask": [
+    "Team IT",
+    "Business Analyst",
+    "Developer",
+    "Tester",
+    "Project Manager",
+    "Business Owner"
+  ]
 }
