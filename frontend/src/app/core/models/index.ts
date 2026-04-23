@@ -71,3 +71,27 @@ export interface AppConfig {
 export interface CurrentUser extends User {
   token?: string;
 }
+
+export interface SubTask {
+  id: string;
+  nome: string;
+  dataInizio: string;
+  dataFine: string;
+  owner: string;
+  stato: string;
+  taskId: string;
+  projectId: string;
+}
+
+// Nomi fissi dei task in sequenza
+export const TASK_SEQUENCE = [
+  'REQUISITI',
+  'TEMPI E STIME',
+  'SVILUPPO',
+  'COLLAUDO LDT',
+  'COLLAUDO BU',
+  'PRODUZIONE',
+  'ADOPTION'
+] as const;
+
+export type TaskName = typeof TASK_SEQUENCE[number];
