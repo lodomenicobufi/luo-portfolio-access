@@ -9,7 +9,7 @@ import { AuthService } from './core/services/auth.service';
   standalone: true,
   imports: [RouterOutlet, RouterLink, RouterLinkActive, CommonModule],
   template: `
-    @if (auth.isLoggedIn()) {
+    @if (auth.currentUser()) {
       <div class="app-root">
         <!-- ─── SIDEBAR ─────────────────────────────────── -->
         <aside class="sidebar">
@@ -94,7 +94,7 @@ export class AppComponent implements OnInit {
   constructor(public auth: AuthService, private router: Router) {}
 
   ngOnInit() {
-    if (!this.auth.isLoggedIn()) {
+    if (!this.auth.currentUser()) {
       this.router.navigate(['/login']);
     }
   }
