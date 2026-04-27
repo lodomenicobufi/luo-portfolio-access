@@ -132,7 +132,18 @@ button, input, select, textarea { font-family: inherit; }
   overflow-y: auto;
 }
 
-.sidebar-logo { padding: 4px 10px 22px; }
+.sidebar-logo {
+  padding: 4px 8px 22px;
+  display: flex;
+  align-items: center;
+}
+.sidebar-logo-img {
+  width: 100%;
+  max-width: 140px;
+  height: auto;
+  display: block;
+  border-radius: 6px;
+}
 
 .luo-wordmark {
   display: inline-flex;
