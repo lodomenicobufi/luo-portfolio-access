@@ -14,7 +14,9 @@ import { AuthService } from './core/services/auth.service';
         <!-- ─── SIDEBAR ─────────────────────────────────── -->
         <aside class="sidebar">
           <div class="sidebar-logo">
-            <img src="assets/logo-luo.jpeg" alt="LUO" class="sidebar-logo-img" />
+            <span class="luo-wordmark">
+              LU<span class="o-wrap">O<span class="o-dot"></span></span>
+            </span>
           </div>
 
           <a routerLink="/dashboard" routerLinkActive="active" class="side-nav-item">
