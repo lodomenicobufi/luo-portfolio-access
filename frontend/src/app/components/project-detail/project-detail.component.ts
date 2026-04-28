@@ -39,90 +39,84 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         </div>
 
         <!-- RIGA 1: anagrafica (metà) + pannello BU (metà) -->
-        <div class="detail-top-row">
-          <div class="detail-anag">
-            @if (editMode()) {
-              <div class="card" style="height:100%">
-                <div class="sec-div">Modifica Progetto</div>
-                <div class="fr2">
-                  <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
-                  <div class="fg"><label class="fl">Stato</label>
-                    <select class="fi" [(ngModel)]="editForm.stato">
-                      @for (v of config()?.statiProgetto||[]; track v){ <option>{{v}}</option> }
-                    </select></div>
-                </div>
-                <div class="fg"><label class="fl">Descrizione</label>
-                  <textarea class="fi" rows="2" [(ngModel)]="editForm.descrizione"></textarea></div>
-                <div class="fr3">
-                  <div class="fg"><label class="fl">Data Inizio</label><input class="fi" type="date" [(ngModel)]="editForm.dataInizio"/></div>
-                  <div class="fg"><label class="fl">Data Fine</label><input class="fi" type="date" [(ngModel)]="editForm.dataFine"/></div>
-                  <div class="fg"><label class="fl">Priorita</label>
-                    <select class="fi" [(ngModel)]="editForm.priorita">
-                      @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
-                    </select></div>
-                </div>
-                <div class="fg"><label class="fl">Documentazione</label>
-                  <select class="fi" [(ngModel)]="editForm.documentazione">
-                    <option>parziale</option><option>totale</option><option>non necessaria</option>
-                  </select></div>
-                <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
-                  {{ saving() ? 'Salvataggio...' : 'Salva' }}
-                </button>
-              </div>
-            }
-            @if (!editMode()) {
-              <div class="card detail-grid" style="height:100%">
-                <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
-                <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
-                <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
-                <div><div class="dl">Owner</div><div class="dv">{{ ownerName(project()!.owner) }}</div></div>
-                <div><div class="dl">Data Inizio</div><div class="dv">{{ fmtDate(project()!.dataInizio) }}</div></div>
-                <div><div class="dl">Data Fine</div><div class="dv">{{ fmtDate(project()!.dataFine) }}</div></div>
-                <div>
-                  <div class="dl">Completamento</div>
-                  <div style="display:flex;align-items:center;gap:8px">
-                    <div class="pbar"><div class="pfill hi" [style.width.%]="project()!.completamento"></div></div>
-                    <span class="dv">{{ project()!.completamento }}%</span>
+        <!-- RIGA 1: Progetti stessa BU (full width) -->
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-hdr">
+            <div>
+              <div class="card-eyebrow">Progetti stessa BU · {{ project()!.businessUnit }}</div>
+              <div class="card-title">Progetti per priorità</div>
+            </div>
+          </div>
+          @if (sameBuProjects().length === 0) {
+            <div class="empty" style="padding:20px;font-size:13px">Nessun altro progetto nella stessa BU</div>
+          } @else {
+            <div class="bu-proj-grid">
+              @for (p of sameBuProjects(); track p.id) {
+                <a [routerLink]="['/projects', p.id]" class="bu-proj-row">
+                  <div class="bu-proj-nome">{{ p.nome }}</div>
+                  <div class="bu-proj-meta">
+                    <span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()" style="font-size:10px">{{ p.priorita }}</span>
+                    <span class="bu-proj-pct">{{ p.completamento }}%</span>
                   </div>
-                </div>
-                <div><div class="dl">Documentazione</div>
-                  <span class="badge" [class]="docBadge(project()!.documentazione)">{{ project()!.documentazione }}</span>
-                </div>
-              </div>
-            }
-          </div><!-- /detail-anag -->
-
-          <!-- PANNELLO BU -->
-          <div class="detail-side">
-            <div class="card" style="height:100%">
-              <div class="card-hdr" style="padding:14px 16px">
-                <div>
-                  <div class="card-eyebrow">Stessa BU</div>
-                  <div class="card-title" style="font-size:13px">{{ project()!.businessUnit }}</div>
-                </div>
-              </div>
-              @if (sameBuProjects().length === 0) {
-                <div class="empty" style="padding:16px;font-size:12px">Nessun altro progetto nella stessa BU</div>
-              } @else {
-                <div class="bu-proj-list">
-                  @for (p of sameBuProjects(); track p.id) {
-                    <a [routerLink]="['/projects', p.id]" class="bu-proj-row">
-                      <div class="bu-proj-nome">{{ p.nome }}</div>
-                      <div class="bu-proj-meta">
-                        <span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()" style="font-size:10px">{{ p.priorita }}</span>
-                        <span class="bu-proj-pct">{{ p.completamento }}%</span>
-                      </div>
-                      <div class="pbar" style="margin-top:4px">
-                        <div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
-                      </div>
-                    </a>
-                  }
-                </div>
+                  <div class="pbar" style="margin-top:4px">
+                    <div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
+                  </div>
+                </a>
               }
             </div>
-          </div><!-- /detail-side -->
+          }
+        </div>
 
-        </div><!-- /detail-top-row -->
+        <!-- RIGA 2: Anagrafica progetto (full width) -->
+        @if (editMode()) {
+          <div class="card" style="margin-bottom:16px">
+            <div class="sec-div">Modifica Progetto</div>
+            <div class="fr2">
+              <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
+              <div class="fg"><label class="fl">Stato</label>
+                <select class="fi" [(ngModel)]="editForm.stato">
+                  @for (v of config()?.statiProgetto||[]; track v){ <option>{{v}}</option> }
+                </select></div>
+            </div>
+            <div class="fg"><label class="fl">Descrizione</label>
+              <textarea class="fi" rows="2" [(ngModel)]="editForm.descrizione"></textarea></div>
+            <div class="fr3">
+              <div class="fg"><label class="fl">Data Inizio</label><input class="fi" type="date" [(ngModel)]="editForm.dataInizio"/></div>
+              <div class="fg"><label class="fl">Data Fine</label><input class="fi" type="date" [(ngModel)]="editForm.dataFine"/></div>
+              <div class="fg"><label class="fl">Priorita</label>
+                <select class="fi" [(ngModel)]="editForm.priorita">
+                  @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
+                </select></div>
+            </div>
+            <div class="fg"><label class="fl">Documentazione</label>
+              <select class="fi" [(ngModel)]="editForm.documentazione">
+                <option>parziale</option><option>totale</option><option>non necessaria</option>
+              </select></div>
+            <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
+              {{ saving() ? 'Salvataggio...' : 'Salva' }}
+            </button>
+          </div>
+        }
+        @if (!editMode()) {
+          <div class="card detail-grid" style="margin-bottom:16px">
+            <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
+            <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
+            <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
+            <div><div class="dl">Owner</div><div class="dv">{{ ownerName(project()!.owner) }}</div></div>
+            <div><div class="dl">Data Inizio</div><div class="dv">{{ fmtDate(project()!.dataInizio) }}</div></div>
+            <div><div class="dl">Data Fine</div><div class="dv">{{ fmtDate(project()!.dataFine) }}</div></div>
+            <div>
+              <div class="dl">Completamento</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div class="pbar"><div class="pfill hi" [style.width.%]="project()!.completamento"></div></div>
+                <span class="dv">{{ project()!.completamento }}%</span>
+              </div>
+            </div>
+            <div><div class="dl">Documentazione</div>
+              <span class="badge" [class]="docBadge(project()!.documentazione)">{{ project()!.documentazione }}</span>
+            </div>
+          </div>
+        }
 
         <!-- RIGA 2: tabs collassabili (full width) -->
         <div class="card collapsible-card" style="margin-bottom:16px">

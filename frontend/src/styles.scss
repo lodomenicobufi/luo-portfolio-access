@@ -1006,6 +1006,7 @@ select.fi {
 .subtask-body { padding:12px; border-top:0.5px solid rgba(46,46,46,0.06); background:var(--bg-soft); }
 
 /* ── BU projects panel ── */
+.bu-proj-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:0; }
 .bu-proj-list { display:flex; flex-direction:column; }
 .bu-proj-row { display:block; padding:10px 16px; border-bottom:1px solid rgba(46,46,46,0.06); text-decoration:none; color:var(--ink); transition:background .12s; }
 .bu-proj-row:last-child { border-bottom:none; }
