@@ -1,2 +1,2 @@
 id,titolo,descrizione,buRiferimento,progettoRiferimento,richiedenteId,stato,note,dataCreazione,dataEsito,gestitaId,progettoCreato
-req-1777381587375,Test Giacomo,Voglio un aumento,Digital,p3,u4,In valutazione,,2026-04-28,,,
+req-1777381587375,Test Giacomo,Voglio un aumento,Digital,p3,u4,Respinta,primo test respinto,2026-04-28,2026-04-28,u1,
