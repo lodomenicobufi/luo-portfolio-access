@@ -438,6 +438,7 @@ export class GithubDataService {
       stato: 'Pianificazione',
       dataInizio: today,
       dataFine: '',
+      completamento: 0,
       documentazione: 'parziale',
       priorita: 'Media',
       repositoryUrl: '',
