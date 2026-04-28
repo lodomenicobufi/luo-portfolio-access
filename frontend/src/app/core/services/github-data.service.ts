@@ -137,11 +137,26 @@ export class GithubDataService {
   // PROJECTS
   // ══════════════════════════════════════════════════════════════
   async getProjects(): Promise<Project[]> {
-    const csv = await this.readFile('data/projects.csv');
-    return this.parseCsv<Project>(csv).map(p => ({
-      ...p,
-      completamento: Number(p.completamento) || 0
-    }));
+    const [csv, tasksCsv] = await Promise.all([
+      this.readFile('data/projects.csv'),
+      this.readFile('data/tasks.csv').catch(() => '')
+    ]);
+    const projects = this.parseCsv<Project>(csv);
+    const allTasks = tasksCsv ? this.parseCsv<Task>(tasksCsv) : [];
+
+    const TOTAL_TASKS = 7; // REQUISITI, TEMPI E STIME, SVILUPPO, COLLAUDO LDT, COLLAUDO BU, PRODUZIONE, ADOPTION
+
+    return projects.map(p => {
+      const projectTasks = allTasks.filter(t => t.projectId === p.id);
+      let completamento: number;
+      if (projectTasks.length > 0) {
+        const completed = projectTasks.filter(t => t.stato === 'Completato').length;
+        completamento = Math.round((completed / TOTAL_TASKS) * 100);
+      } else {
+        completamento = Number(p.completamento) || 0;
+      }
+      return { ...p, completamento };
+    });
   }
 
   async saveProjects(projects: Project[]): Promise<void> {
