@@ -43,61 +43,62 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         <div class="detail-layout">
           <div class="detail-main">
 
-          <div class="card" style="margin-bottom:16px">
-            <div class="sec-div">Modifica Progetto</div>
-            <div class="fr2">
-              <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
-              <div class="fg"><label class="fl">Stato</label>
-                <select class="fi" [(ngModel)]="editForm.stato">
-                  @for (v of config()?.statiProgetto||[]; track v){ <option>{{v}}</option> }
-                </select></div>
-            </div>
-            <div class="fg"><label class="fl">Descrizione</label>
-              <textarea class="fi" rows="2" [(ngModel)]="editForm.descrizione"></textarea></div>
-            <div class="fr3">
-              <div class="fg"><label class="fl">Data Inizio</label><input class="fi" type="date" [(ngModel)]="editForm.dataInizio"/></div>
-              <div class="fg"><label class="fl">Data Fine</label><input class="fi" type="date" [(ngModel)]="editForm.dataFine"/></div>
-              <div class="fg"><label class="fl">Priorita</label>
-                <select class="fi" [(ngModel)]="editForm.priorita">
-                  @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
-                </select></div>
-            </div>
-            <div class="fg"><label class="fl">Documentazione</label>
-                <select class="fi" [(ngModel)]="editForm.documentazione">
-                  <option>parziale</option><option>totale</option><option>non necessaria</option>
-                </select></div>
-            <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
-              {{ saving() ? 'Salvataggio...' : 'Salva' }}
-            </button>
-          </div>
-        }
-
-        @if (!editMode()) {
-          <div class="card detail-grid" style="margin-bottom:16px">
-            <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
-            <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
-            <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
-            <div><div class="dl">Owner</div><div class="dv">{{ ownerName(project()!.owner) }}</div></div>
-            <div><div class="dl">Data Inizio</div><div class="dv">{{ fmtDate(project()!.dataInizio) }}</div></div>
-            <div><div class="dl">Data Fine</div><div class="dv">{{ fmtDate(project()!.dataFine) }}</div></div>
-            <div>
-              <div class="dl">Completamento</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <div class="pbar"><div class="pfill hi" [style.width.%]="project()!.completamento"></div></div>
-                <span class="dv">{{ project()!.completamento }}%</span>
+            @if (editMode()) {
+              <div class="card" style="margin-bottom:16px">
+                <div class="sec-div">Modifica Progetto</div>
+                <div class="fr2">
+                  <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
+                  <div class="fg"><label class="fl">Stato</label>
+                    <select class="fi" [(ngModel)]="editForm.stato">
+                      @for (v of config()?.statiProgetto||[]; track v){ <option>{{v}}</option> }
+                    </select></div>
+                </div>
+                <div class="fg"><label class="fl">Descrizione</label>
+                  <textarea class="fi" rows="2" [(ngModel)]="editForm.descrizione"></textarea></div>
+                <div class="fr3">
+                  <div class="fg"><label class="fl">Data Inizio</label><input class="fi" type="date" [(ngModel)]="editForm.dataInizio"/></div>
+                  <div class="fg"><label class="fl">Data Fine</label><input class="fi" type="date" [(ngModel)]="editForm.dataFine"/></div>
+                  <div class="fg"><label class="fl">Priorita</label>
+                    <select class="fi" [(ngModel)]="editForm.priorita">
+                      @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
+                    </select></div>
+                </div>
+                <div class="fg"><label class="fl">Documentazione</label>
+                  <select class="fi" [(ngModel)]="editForm.documentazione">
+                    <option>parziale</option><option>totale</option><option>non necessaria</option>
+                  </select></div>
+                <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
+                  {{ saving() ? 'Salvataggio...' : 'Salva' }}
+                </button>
               </div>
-            </div>
-            <div><div class="dl">Documentazione</div>
-              <span class="badge" [class]="docBadge(project()!.documentazione)">{{ project()!.documentazione }}</span>
-            </div>
-          </div>
-        }
+            }
 
-        <div class="tabs">
-          @for (t of getTabs(); track t.id) {
-            <button class="tab" [class.active]="activeTab()===t.id" (click)="activeTab.set(t.id)">{{ t.label }}</button>
-          }
-        </div>
+            @if (!editMode()) {
+              <div class="card detail-grid" style="margin-bottom:16px">
+                <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
+                <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
+                <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
+                <div><div class="dl">Owner</div><div class="dv">{{ ownerName(project()!.owner) }}</div></div>
+                <div><div class="dl">Data Inizio</div><div class="dv">{{ fmtDate(project()!.dataInizio) }}</div></div>
+                <div><div class="dl">Data Fine</div><div class="dv">{{ fmtDate(project()!.dataFine) }}</div></div>
+                <div>
+                  <div class="dl">Completamento</div>
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <div class="pbar"><div class="pfill hi" [style.width.%]="project()!.completamento"></div></div>
+                    <span class="dv">{{ project()!.completamento }}%</span>
+                  </div>
+                </div>
+                <div><div class="dl">Documentazione</div>
+                  <span class="badge" [class]="docBadge(project()!.documentazione)">{{ project()!.documentazione }}</span>
+                </div>
+              </div>
+            }
+
+            <div class="tabs">
+              @for (t of getTabs(); track t.id) {
+                <button class="tab" [class.active]="activeTab()===t.id" (click)="activeTab.set(t.id)">{{ t.label }}</button>
+              }
+            </div>
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
