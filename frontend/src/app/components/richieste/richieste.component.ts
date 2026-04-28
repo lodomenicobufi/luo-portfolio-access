@@ -14,7 +14,6 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
-    <!-- ── TOPBAR ACTIONS ── -->
     <div class="filter-bar">
       @if (isViewer()) {
         <span class="filter-label">Le mie richieste</span>
@@ -25,7 +24,7 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
         <button class="filter-pill" [class.active]="filtroStato==='Respinta'" (click)="filtroStato='Respinta'">Respinte</button>
       }
       <div class="filter-spacer"></div>
-      <button class="btn btn-mint btn-sm" (click)="openNuova()">+ Nuova richiesta</button>
+      <button class="btn btn-p btn-sm" (click)="openNuova()">+ Nuova richiesta</button>
     </div>
 
     @if (loading()) {
@@ -42,9 +41,14 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
 
           @if (filtered().length === 0) {
             <div class="req-empty">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="40" height="40">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="12" y1="11" x2="12" y2="17"/>
+                <line x1="9" y1="14" x2="15" y2="14"/>
+              </svg>
               <p>Nessuna richiesta trovata</p>
-              <button class="btn btn-mint btn-sm" (click)="openNuova()">Crea la prima richiesta</button>
+              <button class="btn btn-p btn-sm" (click)="openNuova()">Crea la prima richiesta</button>
             </div>
           } @else {
             <div class="tbl-wrap">
@@ -58,8 +62,7 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                     <th>Stato</th>
                     <th>Data</th>
                     <th>Note</th>
-                    @if (!isViewer()) { <th>Azioni</th> }
-                    @if (isViewer()) { <th>Progetto creato</th> }
+                    <th>Azioni</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -71,9 +74,7 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                       </td>
                       <td><span class="badge bgr">{{ r.buRiferimento || '—' }}</span></td>
                       <td class="req-progrif">{{ progettoNome(r.progettoRiferimento) }}</td>
-                      @if (!isViewer()) {
-                        <td>{{ userName(r.richiedenteId) }}</td>
-                      }
+                      @if (!isViewer()) { <td>{{ userName(r.richiedenteId) }}</td> }
                       <td>
                         <span class="badge" [class]="statoBadge(r.stato)">
                           <span class="badge-dot" [style.background]="statoColor(r.stato)"></span>
@@ -82,27 +83,18 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                       </td>
                       <td>{{ fmtDate(r.dataCreazione) }}</td>
                       <td class="req-note">{{ r.note || '—' }}</td>
-                      @if (!isViewer()) {
-                        <td>
-                          @if (r.stato === 'In valutazione') {
-                            <div class="req-actions">
-                              <button class="btn btn-mint btn-xs" (click)="openAccetta(r)">Accetta</button>
-                              <button class="btn btn-danger btn-xs" (click)="openRespingi(r)">Respingi</button>
-                            </div>
-                          } @else if (r.stato === 'Accettata' && r.progettoCreato) {
-                            <a [routerLink]="['/projects', r.progettoCreato]" class="btn btn-s btn-xs">Vai al progetto →</a>
-                          } @else {
-                            <span class="req-chiusa">—</span>
-                          }
-                        </td>
-                      }
-                      @if (isViewer()) {
-                        <td>
-                          @if (r.stato === 'Accettata' && r.progettoCreato) {
-                            <a [routerLink]="['/projects', r.progettoCreato]" class="btn btn-s btn-xs">Vai →</a>
-                          } @else { <span>—</span> }
-                        </td>
-                      }
+                      <td>
+                        @if (canManage() && r.stato === 'In valutazione') {
+                          <div class="req-actions">
+                            <button class="btn btn-p btn-xs" (click)="openAccetta(r)">✓ Accetta</button>
+                            <button class="btn btn-danger btn-xs" (click)="openRespingi(r)">✕ Respingi</button>
+                          </div>
+                        } @else if (r.stato === 'Accettata' && r.progettoCreato) {
+                          <a [routerLink]="['/projects', r.progettoCreato]" class="btn btn-g btn-xs">Vai al progetto →</a>
+                        } @else {
+                          <span style="color:rgba(46,46,46,0.3);font-size:13px">—</span>
+                        }
+                      </td>
                     </tr>
                   }
                 </tbody>
@@ -115,44 +107,46 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
 
     <!-- ══════════ MODAL NUOVA RICHIESTA ══════════ -->
     @if (modal() === 'nuova') {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <div class="modal-hdr">
-            <div class="modal-title">Nuova richiesta</div>
-            <button class="modal-close" (click)="closeModal()">✕</button>
+      <div class="mb" (click)="$event.target === $event.currentTarget && closeModal()">
+        <div class="modal">
+          <div class="mh">
+            <span class="mt">Nuova richiesta</span>
+            <button class="ico-btn" (click)="closeModal()">✕</button>
           </div>
-          <div class="modal-body">
+          <div class="mbody">
             <div class="fg">
               <label class="fl req">Titolo</label>
               <input class="fi" [(ngModel)]="form.titolo" placeholder="Titolo della richiesta" />
             </div>
             <div class="fg">
               <label class="fl req">Descrizione</label>
-              <textarea class="fi" rows="3" [(ngModel)]="form.descrizione" placeholder="Descrivi la richiesta…"></textarea>
+              <textarea class="fi" rows="3" [(ngModel)]="form.descrizione" placeholder="Descrivi la richiesta nel dettaglio…"></textarea>
             </div>
-            <div class="fg">
-              <label class="fl">BU di riferimento</label>
-              <select class="fi" [(ngModel)]="form.buRiferimento">
-                <option value="">— Nessuna —</option>
-                @for (bu of config()?.businessUnits || []; track bu) {
-                  <option [value]="bu">{{ bu }}</option>
-                }
-              </select>
-            </div>
-            <div class="fg">
-              <label class="fl">Progetto di riferimento</label>
-              <select class="fi" [(ngModel)]="form.progettoRiferimento">
-                <option value="">— Nessuno —</option>
-                @for (p of projects(); track p.id) {
-                  <option [value]="p.id">{{ p.nome }}</option>
-                }
-              </select>
+            <div class="fr2">
+              <div class="fg">
+                <label class="fl">BU di riferimento</label>
+                <select class="fi" [(ngModel)]="form.buRiferimento">
+                  <option value="">— Nessuna —</option>
+                  @for (bu of config()?.businessUnits || []; track bu) {
+                    <option [value]="bu">{{ bu }}</option>
+                  }
+                </select>
+              </div>
+              <div class="fg">
+                <label class="fl">Progetto di riferimento</label>
+                <select class="fi" [(ngModel)]="form.progettoRiferimento">
+                  <option value="">— Nessuno —</option>
+                  @for (p of projects(); track p.id) {
+                    <option [value]="p.id">{{ p.nome }}</option>
+                  }
+                </select>
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-s" (click)="closeModal()">Annulla</button>
-            <button class="btn btn-mint" (click)="submitNuova()" [disabled]="saving() || !form.titolo || !form.descrizione">
-              @if (saving()) { Invio… } @else { Invia richiesta }
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="closeModal()">Annulla</button>
+            <button class="btn btn-p" (click)="submitNuova()" [disabled]="saving() || !form.titolo || !form.descrizione">
+              {{ saving() ? 'Invio…' : 'Invia richiesta' }}
             </button>
           </div>
         </div>
@@ -161,31 +155,75 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
 
     <!-- ══════════ MODAL ACCETTA ══════════ -->
     @if (modal() === 'accetta') {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <div class="modal-hdr">
-            <div class="modal-title">Accetta richiesta</div>
-            <button class="modal-close" (click)="closeModal()">✕</button>
+      <div class="mb" (click)="$event.target === $event.currentTarget && closeModal()">
+        <div class="modal">
+          <div class="mh">
+            <span class="mt">Accetta richiesta</span>
+            <button class="ico-btn" (click)="closeModal()">✕</button>
           </div>
-          <div class="modal-body">
-            <div class="req-confirm-box">
-              <div class="req-confirm-label">Stai per accettare:</div>
-              <div class="req-confirm-title">{{ selectedReq()?.titolo }}</div>
-              <div class="req-confirm-desc">{{ selectedReq()?.descrizione }}</div>
+          <div class="mbody">
+            <div class="req-info-section">
+              <div class="sec-div">Richiesta</div>
+              <div class="fg">
+                <label class="fl">Titolo</label>
+                <input class="fi" [value]="selectedReq()?.titolo || ''" disabled />
+              </div>
+              <div class="fg">
+                <label class="fl">Descrizione</label>
+                <textarea class="fi" rows="2" [value]="selectedReq()?.descrizione || ''" disabled></textarea>
+              </div>
+              <div class="fr2">
+                <div class="fg">
+                  <label class="fl">BU</label>
+                  <input class="fi" [value]="selectedReq()?.buRiferimento || '—'" disabled />
+                </div>
+                <div class="fg">
+                  <label class="fl">Richiedente</label>
+                  <input class="fi" [value]="userName(selectedReq()?.richiedenteId || '')" disabled />
+                </div>
+              </div>
             </div>
-            <div class="req-info-box">
-              <div class="req-info-row"><span>Progetto creato con nome:</span><strong>{{ selectedReq()?.titolo }}</strong></div>
-              <div class="req-info-row"><span>BU:</span><strong>{{ selectedReq()?.buRiferimento || '—' }}</strong></div>
-              <div class="req-info-row"><span>Owner:</span><strong>{{ userName(currentUserId()) }}</strong></div>
-              <div class="req-info-row"><span>Stato iniziale:</span><strong>Pianificazione</strong></div>
-              <div class="req-info-row"><span>Priorità:</span><strong>Media</strong></div>
-              <div class="req-info-row"><span>Data avvio:</span><strong>{{ today() }}</strong></div>
+
+            <div class="req-info-section" style="margin-top:8px">
+              <div class="sec-div">Progetto che verrà creato</div>
+              <div class="fr2">
+                <div class="fg">
+                  <label class="fl">Nome progetto</label>
+                  <input class="fi" [value]="selectedReq()?.titolo || ''" disabled />
+                </div>
+                <div class="fg">
+                  <label class="fl">Owner</label>
+                  <input class="fi" [value]="userName(currentUserId())" disabled />
+                </div>
+              </div>
+              <div class="fr3">
+                <div class="fg">
+                  <label class="fl">Stato iniziale</label>
+                  <input class="fi" value="Pianificazione" disabled />
+                </div>
+                <div class="fg">
+                  <label class="fl">Priorità</label>
+                  <input class="fi" value="Media" disabled />
+                </div>
+                <div class="fg">
+                  <label class="fl">Data avvio</label>
+                  <input class="fi" [value]="todayIso()" disabled />
+                </div>
+              </div>
+              <div class="fg">
+                <label class="fl">Task creati automaticamente</label>
+                <div class="req-task-chips">
+                  @for (t of taskSequence; track t) {
+                    <span class="req-task-chip">{{ t }}</span>
+                  }
+                </div>
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-s" (click)="closeModal()">Annulla</button>
-            <button class="btn btn-mint" (click)="submitAccetta()" [disabled]="saving()">
-              @if (saving()) { Elaborazione… } @else { ✓ Conferma accettazione }
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="closeModal()">Annulla</button>
+            <button class="btn btn-p" (click)="submitAccetta()" [disabled]="saving()">
+              {{ saving() ? 'Elaborazione…' : '✓ Conferma accettazione' }}
             </button>
           </div>
         </div>
@@ -194,26 +232,42 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
 
     <!-- ══════════ MODAL RESPINGI ══════════ -->
     @if (modal() === 'respingi') {
-      <div class="modal-backdrop" (click)="closeModal()">
-        <div class="modal" (click)="$event.stopPropagation()">
-          <div class="modal-hdr">
-            <div class="modal-title">Respingi richiesta</div>
-            <button class="modal-close" (click)="closeModal()">✕</button>
+      <div class="mb" (click)="$event.target === $event.currentTarget && closeModal()">
+        <div class="modal">
+          <div class="mh">
+            <span class="mt">Respingi richiesta</span>
+            <button class="ico-btn" (click)="closeModal()">✕</button>
           </div>
-          <div class="modal-body">
-            <div class="req-confirm-box req-confirm-box--danger">
-              <div class="req-confirm-label">Stai per respingere:</div>
-              <div class="req-confirm-title">{{ selectedReq()?.titolo }}</div>
+          <div class="mbody">
+            <div class="req-info-section">
+              <div class="sec-div">Richiesta da respingere</div>
+              <div class="fg">
+                <label class="fl">Titolo</label>
+                <input class="fi" [value]="selectedReq()?.titolo || ''" disabled />
+              </div>
+              <div class="fr2">
+                <div class="fg">
+                  <label class="fl">BU</label>
+                  <input class="fi" [value]="selectedReq()?.buRiferimento || '—'" disabled />
+                </div>
+                <div class="fg">
+                  <label class="fl">Richiedente</label>
+                  <input class="fi" [value]="userName(selectedReq()?.richiedenteId || '')" disabled />
+                </div>
+              </div>
             </div>
-            <div class="fg" style="margin-top:16px">
-              <label class="fl req">Motivazione (obbligatoria)</label>
-              <textarea class="fi" rows="3" [(ngModel)]="noteRespinta" placeholder="Spiega il motivo del rifiuto…"></textarea>
+            <div style="margin-top:16px">
+              <div class="fg">
+                <label class="fl req">Motivazione del rifiuto</label>
+                <textarea class="fi" rows="4" [(ngModel)]="noteRespinta"
+                  placeholder="Spiega il motivo del rifiuto. Questo testo sarà visibile al richiedente…"></textarea>
+              </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-s" (click)="closeModal()">Annulla</button>
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="closeModal()">Annulla</button>
             <button class="btn btn-danger" (click)="submitRespingi()" [disabled]="saving() || !noteRespinta.trim()">
-              @if (saving()) { Elaborazione… } @else { ✕ Conferma rifiuto }
+              {{ saving() ? 'Elaborazione…' : '✕ Conferma rifiuto' }}
             </button>
           </div>
         </div>
@@ -222,20 +276,20 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
 
     <!-- ══════════ MODAL POST-ACCETTAZIONE ══════════ -->
     @if (modal() === 'post-accetta') {
-      <div class="modal-backdrop">
-        <div class="modal modal--wide" (click)="$event.stopPropagation()">
-          <div class="modal-hdr">
+      <div class="mb">
+        <div class="modal">
+          <div class="mh">
             <div>
-              <div class="modal-eyebrow">Progetto creato con successo ✓</div>
-              <div class="modal-title">Vuoi completare il progetto con i dati mancanti?</div>
+              <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">Progetto creato con successo ✓</div>
+              <span class="mt">Vuoi completare i dati mancanti?</span>
             </div>
           </div>
-          <div class="modal-body">
-            <p class="req-post-desc">
-              Il progetto <strong>{{ createdProject()?.nome }}</strong> è stato creato in stato <em>Pianificazione</em>.
-              Puoi completarlo ora aggiungendo Area, Fornitore e Documentazione — oppure farlo in seguito dal dettaglio progetto.
+          <div class="mbody">
+            <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 20px;line-height:1.5">
+              Il progetto <strong>{{ createdProject()?.nome }}</strong> è in stato <em>Pianificazione</em> con tutti i task creati.
+              Puoi aggiungere Area, Fornitore e Documentazione ora, oppure farlo dal dettaglio progetto.
             </p>
-            <div class="fg-grid">
+            <div class="fr3">
               <div class="fg">
                 <label class="fl">Area</label>
                 <select class="fi" [(ngModel)]="postForm.area">
@@ -260,10 +314,10 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
               </div>
             </div>
           </div>
-          <div class="modal-footer">
-            <button class="btn btn-s" (click)="skipPostForm()">Salta — completa dopo</button>
-            <button class="btn btn-mint" (click)="submitPostForm()" [disabled]="saving()">
-              @if (saving()) { Salvataggio… } @else { Salva e vai al progetto }
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="skipPostForm()">Salta — completa dopo</button>
+            <button class="btn btn-p" (click)="submitPostForm()" [disabled]="saving()">
+              {{ saving() ? 'Salvataggio…' : 'Salva e vai al progetto' }}
             </button>
           </div>
         </div>
@@ -272,8 +326,8 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
   `,
 })
 export class RichiesteComponent implements OnInit {
-  private db   = inject(GithubDataService);
-  private auth = inject(AuthService);
+  private db     = inject(GithubDataService);
+  private auth   = inject(AuthService);
   private router = inject(Router);
 
   loading  = signal(true);
@@ -283,15 +337,16 @@ export class RichiesteComponent implements OnInit {
   users     = signal<User[]>([]);
   config    = signal<AppConfig | null>(null);
 
-  modal        = signal<ModalMode>(null);
-  selectedReq  = signal<Richiesta | null>(null);
+  modal          = signal<ModalMode>(null);
+  selectedReq    = signal<Richiesta | null>(null);
   createdProject = signal<Project | null>(null);
 
-  filtroStato = '';
+  filtroStato  = '';
   noteRespinta = '';
-
   form = { titolo: '', descrizione: '', buRiferimento: '', progettoRiferimento: '' };
   postForm = { area: '', fornitore: '', documentazione: 'parziale' };
+
+  readonly taskSequence = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
 
   isViewer  = computed(() => this.auth.currentUser()?.role === 'viewer');
   canManage = computed(() => ['admin','editor'].includes(this.auth.currentUser()?.role || ''));
@@ -306,7 +361,7 @@ export class RichiesteComponent implements OnInit {
     return list.sort((a, b) => b.dataCreazione.localeCompare(a.dataCreazione));
   });
 
-  today = computed(() => new Date().toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'numeric' }));
+  todayIso = () => new Date().toISOString().split('T')[0];
 
   ngOnInit() { this.load(); }
 
@@ -324,41 +379,24 @@ export class RichiesteComponent implements OnInit {
     this.form = { titolo: '', descrizione: '', buRiferimento: '', progettoRiferimento: '' };
     this.modal.set('nuova');
   }
-
-  openAccetta(r: Richiesta) {
-    this.selectedReq.set(r);
-    this.modal.set('accetta');
-  }
-
-  openRespingi(r: Richiesta) {
-    this.selectedReq.set(r);
-    this.noteRespinta = '';
-    this.modal.set('respingi');
-  }
-
+  openAccetta(r: Richiesta) { this.selectedReq.set(r); this.modal.set('accetta'); }
+  openRespingi(r: Richiesta) { this.selectedReq.set(r); this.noteRespinta = ''; this.modal.set('respingi'); }
   closeModal() {
-    if (this.modal() === 'post-accetta') return; // non chiudere col backdrop
-    this.modal.set(null);
-    this.selectedReq.set(null);
+    if (this.modal() === 'post-accetta') return;
+    this.modal.set(null); this.selectedReq.set(null);
   }
 
   async submitNuova() {
     if (!this.form.titolo || !this.form.descrizione) return;
     this.saving.set(true);
     try {
-      const today = new Date().toISOString().split('T')[0];
       const r = await this.db.createRichiesta({
-        titolo: this.form.titolo,
-        descrizione: this.form.descrizione,
+        titolo: this.form.titolo, descrizione: this.form.descrizione,
         buRiferimento: this.form.buRiferimento,
         progettoRiferimento: this.form.progettoRiferimento,
         richiedenteId: this.currentUserId(),
-        stato: 'In valutazione',
-        note: '',
-        dataCreazione: today,
-        dataEsito: '',
-        gestitaId: '',
-        progettoCreato: '',
+        stato: 'In valutazione', note: '',
+        dataCreazione: this.todayIso(), dataEsito: '', gestitaId: '', progettoCreato: '',
       });
       this.richieste.update(list => [r, ...list]);
       this.modal.set(null);
@@ -366,13 +404,11 @@ export class RichiesteComponent implements OnInit {
   }
 
   async submitAccetta() {
-    const r = this.selectedReq();
-    if (!r) return;
+    const r = this.selectedReq(); if (!r) return;
     this.saving.set(true);
     try {
       const newProj = await this.db.accettaRichiesta(
-        r.id, this.currentUserId(),
-        this.projects(), this.users(), this.config()!
+        r.id, this.currentUserId(), this.projects(), this.users(), this.config()!
       );
       this.createdProject.set(newProj);
       this.postForm = { area: '', fornitore: '', documentazione: 'parziale' };
@@ -382,24 +418,20 @@ export class RichiesteComponent implements OnInit {
   }
 
   async submitRespingi() {
-    const r = this.selectedReq();
-    if (!r || !this.noteRespinta.trim()) return;
+    const r = this.selectedReq(); if (!r || !this.noteRespinta.trim()) return;
     this.saving.set(true);
     try {
       await this.db.respingiRichiesta(r.id, this.currentUserId(), this.noteRespinta.trim());
-      await this.load();
-      this.modal.set(null);
+      await this.load(); this.modal.set(null);
     } finally { this.saving.set(false); }
   }
 
   async submitPostForm() {
-    const proj = this.createdProject();
-    if (!proj) return;
+    const proj = this.createdProject(); if (!proj) return;
     this.saving.set(true);
     try {
       await this.db.updateProject(proj.id, {
-        area: this.postForm.area,
-        fornitore: this.postForm.fornitore,
+        area: this.postForm.area, fornitore: this.postForm.fornitore,
         documentazione: this.postForm.documentazione as any,
       });
       this.modal.set(null);
@@ -413,30 +445,9 @@ export class RichiesteComponent implements OnInit {
     if (proj) this.router.navigate(['/projects', proj.id]);
   }
 
-  progettoNome(id: string): string {
-    if (!id) return '—';
-    return this.projects().find(p => p.id === id)?.nome || '—';
-  }
-
-  userName(id: string): string {
-    if (!id) return '—';
-    return this.users().find(u => u.id === id)?.name || id;
-  }
-
-  fmtDate(d: string): string {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
-  }
-
-  statoBadge(s: string): string {
-    if (s === 'Accettata') return 'status-compl';
-    if (s === 'Respinta')  return 'status-attesa';
-    return 'status-pianif';
-  }
-
-  statoColor(s: string): string {
-    if (s === 'Accettata') return '#6EC0AA';
-    if (s === 'Respinta')  return '#E89B8A';
-    return '#B8D8CE';
-  }
+  progettoNome(id: string) { return id ? (this.projects().find(p => p.id === id)?.nome || '—') : '—'; }
+  userName(id: string)     { return id ? (this.users().find(u => u.id === id)?.name || id) : '—'; }
+  fmtDate(d: string)       { return d ? new Date(d).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' }) : '—'; }
+  statoBadge(s: string)    { return s === 'Accettata' ? 'status-compl' : s === 'Respinta' ? 'status-attesa' : 'status-pianif'; }
+  statoColor(s: string)    { return s === 'Accettata' ? '#6EC0AA' : s === 'Respinta' ? '#E89B8A' : '#B8D8CE'; }
 }

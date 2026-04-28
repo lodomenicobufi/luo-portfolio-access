@@ -970,6 +970,34 @@ select.fi {
   border-radius: 20px;
 }
 
+/* ── COLLAPSIBLE CARDS ──────────────────────────────── */
+.collapsible-card { overflow: hidden; }
+.collapsible-hdr {
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s;
+  &:hover { background: rgba(110,192,170,0.04); }
+}
+.collapsible-hdr-left {
+  display: flex; align-items: center; gap: 10px;
+}
+.collapse-chevron {
+  color: rgba(46,46,46,0.4);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+.collapse-chevron.open { transform: rotate(0deg); }
+.collapse-chevron:not(.open) { transform: rotate(-90deg); }
+
+.req-badge-pill {
+  display: inline-block; margin-left: 8px;
+  font-size: 11px; font-weight: 600;
+  background: rgba(232,155,138,0.18); color: #a34a35;
+  border: 1px solid rgba(232,155,138,0.4);
+  border-radius: 20px; padding: 1px 8px;
+  vertical-align: middle;
+}
+
 /* ── RICHIESTE ──────────────────────────────────────── */
 .req-empty {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -1019,6 +1047,17 @@ select.fi {
 .req-post-desc { font-size: 13.5px; color: rgba(46,46,46,0.7); margin: 0 0 20px; line-height: 1.5; }
 .modal-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--mint-dd); margin-bottom: 2px; }
 .fg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+.req-task-chips {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;
+}
+.req-task-chip {
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+  background: rgba(110,192,170,0.12); color: var(--mint-dd);
+  border: 1px solid rgba(110,192,170,0.3);
+  border-radius: 20px; padding: 3px 10px;
+}
+.req-info-section { }
 
 /* ── LOGIN PAGE (preserva look attuale) ─────────────── */
 /* Lasciato vuoto: il login.component.ts ha i suoi stili inline */

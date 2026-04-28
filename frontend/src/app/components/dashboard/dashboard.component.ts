@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, User, AppConfig, Task, ChecklistItem, Ticket } from '../../core/models';
+import { Project, User, AppConfig, Task, ChecklistItem, Ticket, Richiesta } from '../../core/models';
 
 declare var Chart: any;
 
@@ -143,55 +143,128 @@ declare var Chart: any;
           </div>
         </div>
 
-        <!-- TABLE -->
-        <div class="card">
-          <div class="card-hdr">
-            <div>
-              <div class="card-eyebrow">Elenco progetti</div>
-              <div class="card-title">{{ filtered().length }} risultati</div>
+        <!-- TABLE PROGETTI (collassabile) -->
+        <div class="card collapsible-card">
+          <div class="card-hdr collapsible-hdr" (click)="toggleProjects()">
+            <div class="collapsible-hdr-left">
+              <svg class="collapse-chevron" [class.open]="projectsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <div>
+                <div class="card-eyebrow">Elenco progetti</div>
+                <div class="card-title">{{ filtered().length }} risultati</div>
+              </div>
             </div>
-            <a routerLink="/projects" class="btn btn-mint btn-sm">+ Nuovo progetto</a>
+            <a routerLink="/projects" class="btn btn-mint btn-sm" (click)="$event.stopPropagation()">+ Nuovo progetto</a>
           </div>
-          <div class="tbl-wrap">
-            <table class="tbl">
-              <thead>
-                <tr>
-                  <th>Nome</th><th>Priorità</th><th>Area</th><th>Owner</th>
-                  <th>Stato</th><th>Task in corso</th><th>Completamento</th><th>Scadenza</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (p of filtered(); track p.id) {
-                  <tr class="cp" [routerLink]="['/projects', p.id]">
-                    <td><strong>{{ p.nome }}</strong></td>
-                    <td><span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</span></td>
-                    <td><span class="badge bgr">{{ p.area }}</span></td>
-                    <td>{{ ownerName(p.owner) }}</td>
-                    <td><span class="badge" [class]="statoBadge(p.stato)">
-                      <span class="badge-dot" [style.background]="statoColor(p.stato)"></span>
-                      {{ p.stato }}
-                    </span></td>
-                    <td>
-                      <div class="task-chip">
-                        <div class="task-dot" [style.background]="getActiveTaskColor(p.id)"></div>
-                        <span class="task-chip-text">{{ getActiveTask(p.id) }}</span>
-                      </div>
-                    </td>
-                    <td>
-                      <div class="pbar-row">
-                        <div class="pbar"><div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div></div>
-                        <span class="pct-lbl">{{ p.completamento }}%</span>
-                      </div>
-                    </td>
-                    <td [class.text-danger]="isScaduto(p)">{{ fmtDate(p.dataFine) }}{{ isScaduto(p) ? ' !' : '' }}</td>
+          @if (projectsOpen()) {
+            <div class="tbl-wrap">
+              <table class="tbl">
+                <thead>
+                  <tr>
+                    <th>Nome</th><th>Priorità</th><th>Area</th><th>Owner</th>
+                    <th>Stato</th><th>Task in corso</th><th>Completamento</th><th>Scadenza</th>
                   </tr>
-                }
-                @if (filtered().length === 0) {
-                  <tr><td colspan="8" class="empty">Nessun progetto trovato</td></tr>
-                }
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  @for (p of filtered(); track p.id) {
+                    <tr class="cp" [routerLink]="['/projects', p.id]">
+                      <td><strong>{{ p.nome }}</strong></td>
+                      <td><span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</span></td>
+                      <td><span class="badge bgr">{{ p.area }}</span></td>
+                      <td>{{ ownerName(p.owner) }}</td>
+                      <td><span class="badge" [class]="statoBadge(p.stato)">
+                        <span class="badge-dot" [style.background]="statoColor(p.stato)"></span>
+                        {{ p.stato }}
+                      </span></td>
+                      <td>
+                        <div class="task-chip">
+                          <div class="task-dot" [style.background]="getActiveTaskColor(p.id)"></div>
+                          <span class="task-chip-text">{{ getActiveTask(p.id) }}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="pbar-row">
+                          <div class="pbar"><div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div></div>
+                          <span class="pct-lbl">{{ p.completamento }}%</span>
+                        </div>
+                      </td>
+                      <td [class.text-danger]="isScaduto(p)">{{ fmtDate(p.dataFine) }}{{ isScaduto(p) ? ' !' : '' }}</td>
+                    </tr>
+                  }
+                  @if (filtered().length === 0) {
+                    <tr><td colspan="8" class="empty">Nessun progetto trovato</td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+
+        <!-- TABLE RICHIESTE (collassabile) -->
+        <div class="card collapsible-card">
+          <div class="card-hdr collapsible-hdr" (click)="toggleRichieste()">
+            <div class="collapsible-hdr-left">
+              <svg class="collapse-chevron" [class.open]="richiesteOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <div>
+                <div class="card-eyebrow">Richieste recenti</div>
+                <div class="card-title">{{ richiesteFiltered().length }} risultati
+                  @if (richiesteInValutazione() > 0) {
+                    <span class="req-badge-pill">{{ richiesteInValutazione() }} in valutazione</span>
+                  }
+                </div>
+              </div>
+            </div>
+            <a routerLink="/richieste" class="btn btn-s btn-sm" (click)="$event.stopPropagation()">Vedi tutte →</a>
           </div>
+          @if (richiesteOpen()) {
+            @if (richiesteFiltered().length === 0) {
+              <div class="empty" style="padding:20px 24px">Nessuna richiesta</div>
+            } @else {
+              <div class="tbl-wrap">
+                <table class="tbl">
+                  <thead>
+                    <tr>
+                      <th>Titolo</th>
+                      <th>BU</th>
+                      @if (!isCurrentViewer()) { <th>Richiedente</th> }
+                      <th>Stato</th>
+                      <th>Data</th>
+                      <th>Azioni</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (r of richiesteFiltered(); track r.id) {
+                      <tr>
+                        <td>
+                          <strong>{{ r.titolo }}</strong>
+                          <div class="req-desc-preview">{{ r.descrizione | slice:0:50 }}{{ r.descrizione.length > 50 ? '…' : '' }}</div>
+                        </td>
+                        <td><span class="badge bgr">{{ r.buRiferimento || '—' }}</span></td>
+                        @if (!isCurrentViewer()) { <td>{{ richiestaUser(r.richiedenteId) }}</td> }
+                        <td>
+                          <span class="badge" [class]="richiestaStatoBadge(r.stato)">
+                            <span class="badge-dot" [style.background]="richiestaStatoColor(r.stato)"></span>
+                            {{ r.stato }}
+                          </span>
+                        </td>
+                        <td>{{ fmtDate(r.dataCreazione) }}</td>
+                        <td>
+                          @if (canManageReq() && r.stato === 'In valutazione') {
+                            <a routerLink="/richieste" class="btn btn-p btn-xs">Gestisci →</a>
+                          } @else if (r.stato === 'Accettata' && r.progettoCreato) {
+                            <a [routerLink]="['/projects', r.progettoCreato]" class="btn btn-s btn-xs">Progetto →</a>
+                          } @else { <span style="color:rgba(46,46,46,.3)">—</span> }
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
         </div>
 
         <!-- BOTTOM REPORTS -->
@@ -263,6 +336,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   config    = signal<AppConfig | null>(null);
   checklist = signal<ChecklistItem[]>([]);
   tickets   = signal<Ticket[]>([]);
+  richieste = signal<Richiesta[]>([]);
+
+  // collapsible state
+  projectsOpen  = signal(false);
+  richiesteOpen = signal(false);
+
+  toggleProjects()  { this.projectsOpen.update(v => !v); }
+  toggleRichieste() { this.richiesteOpen.update(v => !v); }
 
   filterStato = ''; filterPrio = ''; filterBU = ''; filterArea = '';
 
@@ -351,6 +432,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   coverageTotal      = computed(() => this.config()?.docFields?.length || 0);
   coverageCompletati = computed(() => this.coverageList().filter(i => i.pct === 100).length);
 
+  // ── Richieste dashboard ──────────────────────────────
+  isCurrentViewer = computed(() => this.auth.currentUser()?.role === 'viewer');
+  canManageReq    = computed(() => ['admin','editor'].includes(this.auth.currentUser()?.role || ''));
+
+  richiesteFiltered = computed(() => {
+    const uid = this.auth.currentUser()?.id || '';
+    const list = this.isCurrentViewer()
+      ? this.richieste().filter(r => r.richiedenteId === uid)
+      : this.richieste();
+    return list.sort((a, b) => b.dataCreazione.localeCompare(a.dataCreazione)).slice(0, 10);
+  });
+
+  richiesteInValutazione = computed(() =>
+    this.richieste().filter(r => r.stato === 'In valutazione').length
+  );
+
   statoColors: Record<string,string> = {
     'In corso':'#6EC0AA','Completato':'#2E2E2E','Pianificazione':'#B8D8CE',
     'In attesa':'#E89B8A','On Hold':'#E89B8A','Annullato':'#8aaca4',
@@ -379,12 +476,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c, t, cl, tk] = await Promise.all([
+    const [p, u, c, t, cl, tk, rq] = await Promise.all([
       this.db.getProjects(), this.db.getUsers(), this.db.getConfig(),
-      this.db.getTasks(), this.db.getChecklist(), this.db.getTickets()
+      this.db.getTasks(), this.db.getChecklist(), this.db.getTickets(),
+      this.db.getRichieste()
     ]);
     this.projects.set(p); this.users.set(u); this.config.set(c);
     this.tasks.set(t); this.checklist.set(cl); this.tickets.set(tk);
+    this.richieste.set(rq);
     this.loading.set(false);
     setTimeout(() => this.renderCharts(), 100);
   }
@@ -463,6 +562,10 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     return m[s] || 'bgr';
   }
   statoColor(s: string): string { return this.statoColors[s] || '#8aaca4'; }
+  richiestaUser(id: string)      { return this.users().find(u => u.id === id)?.name || '—'; }
+  richiestaStatoBadge(s: string) { return s === 'Accettata' ? 'status-compl' : s === 'Respinta' ? 'status-attesa' : 'status-pianif'; }
+  richiestaStatoColor(s: string) { return s === 'Accettata' ? '#6EC0AA' : s === 'Respinta' ? '#E89B8A' : '#B8D8CE'; }
+
   pctClass(n: number): string { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
   timeAgo(dateStr: string): string {
     if (!dateStr) return '—';

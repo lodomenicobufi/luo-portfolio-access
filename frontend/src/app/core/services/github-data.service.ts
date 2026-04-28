@@ -444,6 +444,9 @@ export class GithubDataService {
       repositoryUrl: '',
     });
 
+    // Crea automaticamente tutti i task della sequenza
+    await this.initProjectTasks(newProject.id, today);
+
     const idx = all.findIndex(r => r.id === id);
     all[idx] = { ...all[idx], stato: 'Accettata', dataEsito: today, gestitaId, progettoCreato: newProject.id };
     await this.saveRichieste(all);
