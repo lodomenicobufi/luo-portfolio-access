@@ -970,6 +970,71 @@ select.fi {
   border-radius: 20px;
 }
 
+/* ── PROJECT DETAIL ─────────────────────────────────── */
+.detail-layout { display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:20px; align-items:start; }
+.detail-main { min-width:0; }
+.detail-side { position:sticky; top:20px; }
+.detail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px; }
+.dl { font-size:11px; font-weight:700; color:rgba(46,46,46,0.45); text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
+.dv { font-size:13px; font-weight:500; }
+.tabs { display:flex; gap:2px; border-bottom:1px solid rgba(46,46,46,0.08); }
+.tab { font-size:13px; font-weight:500; padding:8px 16px; border:none; background:none; cursor:pointer; color:rgba(46,46,46,0.45); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
+.tab.active { color:var(--mint-dd); border-bottom-color:var(--mint); }
+.tab-card { background:white; border:1px solid rgba(46,46,46,0.08); border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg); padding:20px; margin-bottom:16px; }
+.ticket-row { display:flex; gap:10px; padding:12px; border-radius:6px; background:var(--bg-soft); margin-bottom:8px; border-left:3px solid #6EC0AA; }
+.ticket-row.chiuso { border-left-color:#2E2E2E; opacity:.75; }
+.icon-btn-sm { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 6px; }
+.task-block { background:white; border:1px solid rgba(46,46,46,0.08); border-radius:10px; margin-bottom:10px; overflow:hidden; }
+.task-block.task-locked { opacity:.6; }
+.task-block.task-done { border-left:4px solid var(--mint); }
+.task-block-header { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; cursor:pointer; gap:12px; }
+.task-block-header:hover { background:var(--bg-soft); }
+.task-block-body { padding:16px; border-top:1px solid rgba(46,46,46,0.06); background:var(--bg-soft); }
+.task-num { width:28px; height:28px; border-radius:50%; background:var(--ink); color:white; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+.task-done .task-num { background:var(--mint); color:white; }
+.task-locked .task-num { background:rgba(46,46,46,0.15); color:rgba(46,46,46,0.4); }
+.chk-table { width:100%; border-collapse:collapse; }
+.chk-table th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; color:rgba(46,46,46,0.45); padding:10px 16px; border-bottom:1px solid rgba(46,46,46,0.08); text-align:left; background:var(--bg-soft); }
+.chk-table td { padding:9px 16px; border-bottom:1px solid rgba(46,46,46,0.06); vertical-align:middle; }
+.chk-table tr:last-child td { border-bottom:none; }
+.chk-done td { background:rgba(110,192,170,0.06); }
+.chk-label-done { text-decoration:line-through; color:rgba(46,46,46,0.4); }
+.subtask-block { border:0.5px solid rgba(46,46,46,0.08); border-radius:8px; margin-bottom:6px; overflow:hidden; }
+.subtask-block.subtask-done { border-left:3px solid var(--mint); }
+.subtask-header { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; cursor:pointer; background:white; gap:10px; }
+.subtask-header:hover { background:var(--bg-soft); }
+.subtask-body { padding:12px; border-top:0.5px solid rgba(46,46,46,0.06); background:var(--bg-soft); }
+
+/* ── BU projects panel ── */
+.bu-proj-list { display:flex; flex-direction:column; }
+.bu-proj-row { display:block; padding:10px 16px; border-bottom:1px solid rgba(46,46,46,0.06); text-decoration:none; color:var(--ink); transition:background .12s; }
+.bu-proj-row:last-child { border-bottom:none; }
+.bu-proj-row:hover { background:rgba(110,192,170,0.05); }
+.bu-proj-nome { font-size:13px; font-weight:600; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bu-proj-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+.bu-proj-pct { font-size:11px; font-weight:600; color:rgba(46,46,46,0.5); }
+
+/* ── Gantt ── */
+.gantt-card { overflow:hidden; margin-bottom:16px; }
+.gantt-wrap { display:flex; overflow-x:auto; }
+.gantt-labels { flex-shrink:0; width:160px; padding-top:32px; border-right:1px solid rgba(46,46,46,0.08); }
+.gantt-label { height:32px; display:flex; align-items:center; gap:6px; padding:0 12px; font-size:11.5px; font-weight:500; color:rgba(46,46,46,0.6); white-space:nowrap; border-bottom:1px solid rgba(46,46,46,0.04); }
+.gantt-label.gantt-done { color:var(--mint-dd); }
+.gantt-label.gantt-active { color:var(--ink); font-weight:700; }
+.gantt-task-num { width:18px; height:18px; border-radius:50%; background:rgba(46,46,46,0.1); color:var(--ink); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+.gantt-chart { flex:1; position:relative; }
+.gantt-header { display:flex; height:32px; border-bottom:1px solid rgba(46,46,46,0.1); background:rgba(46,46,46,0.02); }
+.gantt-col-hdr { flex-shrink:0; height:32px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:600; color:rgba(46,46,46,0.4); border-right:1px solid rgba(46,46,46,0.04); letter-spacing:.3px; }
+.gantt-row { position:relative; height:32px; display:flex; border-bottom:1px solid rgba(46,46,46,0.04); }
+.gantt-cell { flex-shrink:0; height:32px; border-right:1px solid rgba(46,46,46,0.04); }
+.gantt-bar { position:absolute; top:5px; height:22px; border-radius:4px; display:flex; align-items:center; padding:0 8px; min-width:20px; z-index:1; transition:opacity .15s; }
+.gantt-bar:hover { opacity:.85; }
+.gantt-bar-todo { background:rgba(184,216,206,0.5); border:1px solid rgba(110,192,170,0.3); }
+.gantt-bar-active { background:#6EC0AA; border:1px solid #4a9e8a; }
+.gantt-bar-done { background:#2E2E2E; border:1px solid #1a1a1a; }
+.gantt-bar-label { font-size:10px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.gantt-bar-active .gantt-bar-label, .gantt-bar-done .gantt-bar-label { color:#fff; }
+
 /* ── COLLAPSIBLE CARDS ──────────────────────────────── */
 .collapsible-card { overflow: hidden; }
 .collapsible-hdr {

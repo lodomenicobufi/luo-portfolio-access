@@ -472,8 +472,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
     .subtask-block.subtask-done { border-left:3px solid var(--green); }
     .subtask-header { display:flex; align-items:center; justify-content:space-between; padding:9px 12px; cursor:pointer; background:white; gap:10px; }
     .subtask-header:hover { background:var(--gray-50); }
-    .subtask-body { padding:12px; border-top:0.5px solid var(--gray-100); background:var(--gray-50); }
-  `]
+  styles: []
 })
 export class ProjectDetailComponent implements OnInit {
   iconCalendar = ICON_CALENDAR;
