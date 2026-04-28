@@ -1,15 +1,15 @@
-id,nome,dataInizio,dataFine,stato,projectId,ordine
-t1,REQUISITI,2024-01-15,,In corso,p1,1
-t2,TEMPI E STIME,,,Da fare,p1,2
-t3,SVILUPPO,,,Da fare,p1,3
-t4,COLLAUDO LDT,,,Da fare,p1,4
-t5,COLLAUDO BU,,,Da fare,p1,5
-t6,PRODUZIONE,,,Da fare,p1,6
-t7,ADOPTION,,,Da fare,p1,7
-t8,REQUISITI,2024-03-01,,In corso,p2,1
-t9,TEMPI E STIME,,,Da fare,p2,2
-t10,SVILUPPO,,,Da fare,p2,3
-t11,COLLAUDO LDT,,,Da fare,p2,4
-t12,COLLAUDO BU,,,Da fare,p2,5
-t13,PRODUZIONE,,,Da fare,p2,6
-t14,ADOPTION,,,Da fare,p2,7
+id,nome,dataInizio,dataFine,stato,projectId
+t1,REQUISITI,2024-01-15,,Completato,p1
+t2,TEMPI E STIME,,,Da fare,p1
+t3,SVILUPPO,,,Da fare,p1
+t4,COLLAUDO LDT,,,Da fare,p1
+t5,COLLAUDO BU,,,Da fare,p1
+t6,PRODUZIONE,,,Da fare,p1
+t7,ADOPTION,,,Da fare,p1
+t8,REQUISITI,2024-03-01,,In corso,p2
+t9,TEMPI E STIME,,,Da fare,p2
+t10,SVILUPPO,,,Da fare,p2
+t11,COLLAUDO LDT,,,Da fare,p2
+t12,COLLAUDO BU,,,Da fare,p2
+t13,PRODUZIONE,,,Da fare,p2
+t14,ADOPTION,,,Da fare,p2
