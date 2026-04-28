@@ -14,7 +14,8 @@ import { AuthService } from './core/services/auth.service';
         <!-- ─── SIDEBAR ─────────────────────────────────── -->
         <aside class="sidebar">
           <div class="sidebar-logo">
-            <img src="assets/logo-luo.jpeg" alt="LUO People and Tech" class="sidebar-logo-img" />
+            <img src="assets/logo-luo.jpeg" alt="LUO People and Tech" class="sidebar-logo-img"
+              (error)="onLogoError($event)" />
           </div>
 
           <a routerLink="/dashboard" routerLinkActive="active" class="side-nav-item">
@@ -128,5 +129,17 @@ export class AppComponent implements OnInit {
   logout() {
     this.auth.logout();
     this.router.navigate(['/login']);
+  }
+
+  onLogoError(event: Event) {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
+    const parent = img.parentElement;
+    if (parent && !parent.querySelector('.luo-wordmark-fb')) {
+      const span = document.createElement('span');
+      span.className = 'luo-wordmark-fb';
+      span.textContent = 'LUO';
+      parent.appendChild(span);
+    }
   }
 }

@@ -133,16 +133,23 @@ button, input, select, textarea { font-family: inherit; }
 }
 
 .sidebar-logo {
-  padding: 4px 8px 22px;
+  padding: 0 4px 20px;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 .sidebar-logo-img {
-  width: 100%;
-  max-width: 140px;
+  width: 90px;
   height: auto;
   display: block;
-  border-radius: 6px;
+  object-fit: contain;
+}
+.luo-wordmark-fb {
+  font-family: 'Geist', sans-serif;
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.5px;
+  color: var(--ink);
 }
 
 .luo-wordmark {
