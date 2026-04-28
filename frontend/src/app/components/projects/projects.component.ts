@@ -65,7 +65,12 @@ import { Project, User, AppConfig } from '../../core/models';
               <tbody>
                 @for (p of filtered(); track p.id) {
                   <tr class="cp" [routerLink]="['/projects', p.id]">
-                    <td style="padding-left:18px"><strong>{{ p.nome }}</strong></td>
+                    <td style="padding-left:18px">
+                      <strong>{{ p.nome }}</strong>
+                      @if (p.descrizione) {
+                        <div class="req-desc-preview">{{ p.descrizione | slice:0:70 }}{{ p.descrizione.length > 70 ? '…' : '' }}</div>
+                      }
+                    </td>
                     <td><span class="badge bp">{{ p.tipologia }}</span></td>
                     <td><span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</span></td>
                     <td><span class="badge bgr">{{ p.area }}</span></td>
