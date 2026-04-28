@@ -1,5 +1,5 @@
 // src/app/components/project-detail/project-detail.component.ts
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, AfterViewInit, signal, computed, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -94,11 +94,24 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               </div>
             }
 
-            <div class="tabs">
-              @for (t of getTabs(); track t.id) {
-                <button class="tab" [class.active]="activeTab()===t.id" (click)="activeTab.set(t.id)">{{ t.label }}</button>
-              }
-            </div>
+            <!-- TABS collassabili -->
+            <div class="card collapsible-card" style="margin-bottom:16px">
+              <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
+                <div class="collapsible-hdr-left">
+                  <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                  <div class="card-title" style="font-size:14px">Dettagli</div>
+                </div>
+                <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
+                  @for (t of getTabs(); track t.id) {
+                    <button class="tab" [class.active]="activeTab()===t.id"
+                      (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
+                  }
+                </div>
+              </div>
+
+              @if (tabsOpen()) {
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
@@ -125,7 +138,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     } @else {
                       <span class="badge" [class]="taskBadge(t.stato)">{{ t.stato }}</span>
                     }
-                    <span style="color:var(--gray-400);font-size:12px">{{ expandedTaskId()===t.id ? 'v' : '>' }}</span>
+                    <span style="color:var(--gray-400);font-size:12px">{{ expandedTaskId()===t.id ? '▾' : '▸' }}</span>
                   </div>
                 </div>
 
@@ -320,6 +333,10 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
           </div>
         }
+
+              }<!-- /tabsOpen -->
+            </div><!-- /collapsible card -->
+
           </div><!-- /detail-main -->
 
           <!-- PANNELLO PROGETTI STESSA BU -->
@@ -371,16 +388,20 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                 </div>
               }
             </div>
-            <div class="gantt-chart" #ganttChart>
+            <div class="gantt-chart" #ganttContainer>
               <div class="gantt-header">
-                @for (col of ganttColumns(); track col.label) {
-                  <div class="gantt-col-hdr" [style.width.px]="ganttDayW">{{ col.label }}</div>
+                @for (col of ganttColumns(); track col.label; let ci = $index) {
+                  <div class="gantt-col-hdr" [style.width.px]="ganttDayW"
+                    [style.background]="col.isMonday ? 'rgba(110,192,170,0.08)' : ''">
+                    {{ col.label }}
+                  </div>
                 }
               </div>
-              @for (t of tasks(); track t.id; let i = $index) {
+              @for (t of tasks(); track t.id) {
                 <div class="gantt-row">
                   @for (col of ganttColumns(); track col.label) {
-                    <div class="gantt-cell" [style.width.px]="ganttDayW"></div>
+                    <div class="gantt-cell" [style.width.px]="ganttDayW"
+                      [style.background]="col.isMonday ? 'rgba(110,192,170,0.04)' : ''"></div>
                   }
                   <div class="gantt-bar"
                     [class.gantt-bar-done]="t.stato==='Completato'"
@@ -395,14 +416,15 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
           </div>
         </div>
-
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
       }
     </div>
   `,
   styles: []
 })
-export class ProjectDetailComponent implements OnInit {
+export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('ganttContainer') ganttContainerRef!: ElementRef;
+  private resizeObserver?: ResizeObserver;
   iconCalendar = ICON_CALENDAR;
   iconVerified = ICON_VERIFIED;
   iconFolder = ICON_FOLDER;
@@ -421,7 +443,8 @@ export class ProjectDetailComponent implements OnInit {
   users = signal<User[]>([]);
   config = signal<AppConfig | null>(null);
   activeTab = signal('task');
-  editMode = signal(false);
+  tabsOpen  = signal(false);
+  editMode  = signal(false);
   toast = signal('');
   editForm: Partial<Project> = {};
   checklistLinks: Record<string, string> = {};
@@ -430,7 +453,13 @@ export class ProjectDetailComponent implements OnInit {
   newSubTaskMap: Record<string, Record<string, string>> = {};
   newTicket: Partial<Ticket> = { titolo:'', descrizione:'', stato:'Aperto', priorita:'Media', riferimentoSD:'', dataApertura: new Date().toISOString().split('T')[0], note:'' };
 
-  readonly ganttDayW = 28;
+  readonly ganttLabelW = 160;
+  ganttContainerW = signal(800);
+  get ganttDayW(): number {
+    const cols = this.ganttColumns().length || 1;
+    const available = this.ganttContainerW() - this.ganttLabelW;
+    return Math.max(14, Math.floor(available / cols));
+  }
   readonly TASK_DURATIONS: Record<string, number> = {
     'REQUISITI': 7, 'TEMPI E STIME': 7, 'SVILUPPO': 15,
     'COLLAUDO LDT': 7, 'COLLAUDO BU': 7, 'PRODUZIONE': 15, 'ADOPTION': 7
@@ -475,13 +504,15 @@ export class ProjectDetailComponent implements OnInit {
   ganttColumns = computed(() => {
     const start = this.ganttStart();
     const end = this.ganttEnd();
-    const cols: { label: string; date: Date }[] = [];
+    const cols: { label: string; date: Date; isMonday: boolean }[] = [];
     const cur = new Date(start);
     while (cur <= end) {
       const dow = cur.getDay();
+      const isMonday = dow === 1;
       cols.push({
-        label: dow === 1 ? cur.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' }) : '',
-        date: new Date(cur)
+        label: isMonday ? cur.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' }) : '',
+        date: new Date(cur),
+        isMonday,
       });
       cur.setDate(cur.getDate() + 1);
     }
@@ -526,6 +557,20 @@ export class ProjectDetailComponent implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id')!;
     this.loadAll(id);
+  }
+
+  ngAfterViewInit() {
+    if (this.ganttContainerRef) {
+      this.resizeObserver = new ResizeObserver(entries => {
+        const w = entries[0]?.contentRect.width;
+        if (w) this.ganttContainerW.set(w);
+      });
+      this.resizeObserver.observe(this.ganttContainerRef.nativeElement);
+    }
+  }
+
+  ngOnDestroy() {
+    this.resizeObserver?.disconnect();
   }
 
   async loadAll(id: string) {
