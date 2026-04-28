@@ -155,7 +155,7 @@ declare var Chart: any;
                 <div class="card-title">{{ filtered().length }} risultati</div>
               </div>
             </div>
-            <a routerLink="/projects" class="btn btn-mint btn-sm" (click)="$event.stopPropagation()">+ Nuovo progetto</a>
+            <a routerLink="/projects" class="btn btn-s btn-sm" (click)="$event.stopPropagation()">Vedi tutti →</a>
           </div>
           @if (projectsOpen()) {
             <div class="tbl-wrap">
