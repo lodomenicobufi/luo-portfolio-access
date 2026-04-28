@@ -971,9 +971,9 @@ select.fi {
 }
 
 /* ── PROJECT DETAIL ─────────────────────────────────── */
-.detail-layout { display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:20px; align-items:start; }
-.detail-main { min-width:0; }
-.detail-side { position:sticky; top:20px; }
+.detail-top-row { display:grid; grid-template-columns:1fr 1fr; gap:20px; align-items:start; margin-bottom:16px; }
+.detail-anag { min-width:0; }
+.detail-side { min-width:0; }
 .detail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px; }
 .dl { font-size:11px; font-weight:700; color:rgba(46,46,46,0.45); text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
 .dv { font-size:13px; font-weight:500; }

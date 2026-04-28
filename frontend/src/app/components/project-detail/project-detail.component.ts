@@ -25,7 +25,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between">
           <div>
-            <a routerLink="/projects" style="color:var(--gray-400);text-decoration:none;font-size:13px">&#8592; Progetti</a>
+            <a routerLink="/projects" class="btn btn-s btn-sm" style="text-decoration:none;margin-bottom:8px;display:inline-flex">&#8592; Progetti</a>
             <div class="page-title" style="margin-top:4px">{{ project()!.nome }}</div>
             <div style="display:flex;gap:8px;margin-top:6px">
               <span class="badge" [class]="statoBadge(project()!.stato)">{{ project()!.stato }}</span>
@@ -34,17 +34,15 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
           </div>
           @if (auth.isEditor) {
-            <button class="btn btn-p" (click)="editMode.set(!editMode())">
-              {{ editMode() ? 'Annulla' : 'Modifica' }}
-            </button>
+            <button class="btn btn-s btn-sm" (click)="editMode.set(!editMode())">\n              {{ editMode() ? 'Annulla' : 'Modifica' }}\n            </button>
           }
         </div>
 
-        <div class="detail-layout">
-          <div class="detail-main">
-
+        <!-- RIGA 1: anagrafica (metà) + pannello BU (metà) -->
+        <div class="detail-top-row">
+          <div class="detail-anag">
             @if (editMode()) {
-              <div class="card" style="margin-bottom:16px">
+              <div class="card" style="height:100%">
                 <div class="sec-div">Modifica Progetto</div>
                 <div class="fr2">
                   <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
@@ -72,9 +70,8 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                 </button>
               </div>
             }
-
             @if (!editMode()) {
-              <div class="card detail-grid" style="margin-bottom:16px">
+              <div class="card detail-grid" style="height:100%">
                 <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
                 <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
                 <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
@@ -93,25 +90,58 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                 </div>
               </div>
             }
+          </div><!-- /detail-anag -->
 
-            <!-- TABS collassabili -->
-            <div class="card collapsible-card" style="margin-bottom:16px">
-              <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
-                <div class="collapsible-hdr-left">
-                  <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                    <polyline points="6 9 12 15 18 9"/>
-                  </svg>
-                  <div class="card-title" style="font-size:14px">Dettagli</div>
-                </div>
-                <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
-                  @for (t of getTabs(); track t.id) {
-                    <button class="tab" [class.active]="activeTab()===t.id"
-                      (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
-                  }
+          <!-- PANNELLO BU -->
+          <div class="detail-side">
+            <div class="card" style="height:100%">
+              <div class="card-hdr" style="padding:14px 16px">
+                <div>
+                  <div class="card-eyebrow">Stessa BU</div>
+                  <div class="card-title" style="font-size:13px">{{ project()!.businessUnit }}</div>
                 </div>
               </div>
+              @if (sameBuProjects().length === 0) {
+                <div class="empty" style="padding:16px;font-size:12px">Nessun altro progetto nella stessa BU</div>
+              } @else {
+                <div class="bu-proj-list">
+                  @for (p of sameBuProjects(); track p.id) {
+                    <a [routerLink]="['/projects', p.id]" class="bu-proj-row">
+                      <div class="bu-proj-nome">{{ p.nome }}</div>
+                      <div class="bu-proj-meta">
+                        <span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()" style="font-size:10px">{{ p.priorita }}</span>
+                        <span class="bu-proj-pct">{{ p.completamento }}%</span>
+                      </div>
+                      <div class="pbar" style="margin-top:4px">
+                        <div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
+                      </div>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          </div><!-- /detail-side -->
 
-              @if (tabsOpen()) {
+        </div><!-- /detail-top-row -->
+
+        <!-- RIGA 2: tabs collassabili (full width) -->
+        <div class="card collapsible-card" style="margin-bottom:16px">
+          <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
+            <div class="collapsible-hdr-left">
+              <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <div class="card-title" style="font-size:14px">Dettagli</div>
+            </div>
+            <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
+              @for (t of getTabs(); track t.id) {
+                <button class="tab" [class.active]="activeTab()===t.id"
+                  (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
+              }
+            </div>
+          </div>
+
+          @if (tabsOpen()) {
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
@@ -335,43 +365,9 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         }
 
               }<!-- /tabsOpen -->
-            </div><!-- /collapsible card -->
+          </div><!-- /collapsible card tabs -->
 
-          </div><!-- /detail-main -->
-
-          <!-- PANNELLO PROGETTI STESSA BU -->
-          <div class="detail-side">
-            <div class="card">
-              <div class="card-hdr" style="padding:14px 16px">
-                <div>
-                  <div class="card-eyebrow">Stessa BU</div>
-                  <div class="card-title" style="font-size:13px">{{ project()!.businessUnit }}</div>
-                </div>
-              </div>
-              @if (sameBuProjects().length === 0) {
-                <div class="empty" style="padding:16px;font-size:12px">Nessun altro progetto</div>
-              } @else {
-                <div class="bu-proj-list">
-                  @for (p of sameBuProjects(); track p.id) {
-                    <a [routerLink]="['/projects', p.id]" class="bu-proj-row">
-                      <div class="bu-proj-nome">{{ p.nome }}</div>
-                      <div class="bu-proj-meta">
-                        <span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()" style="font-size:10px">{{ p.priorita }}</span>
-                        <span class="bu-proj-pct">{{ p.completamento }}%</span>
-                      </div>
-                      <div class="pbar" style="margin-top:4px">
-                        <div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
-                      </div>
-                    </a>
-                  }
-                </div>
-              }
-            </div>
-          </div><!-- /detail-side -->
-
-        </div><!-- /detail-layout -->
-
-        <!-- GANTT -->
+        <!-- GANTT full-width -->
         <div class="card gantt-card">
           <div class="card-hdr">
             <div>
