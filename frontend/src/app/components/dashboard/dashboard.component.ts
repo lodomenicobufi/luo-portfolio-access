@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, User, AppConfig, Task } from '../../core/models';
+import { Project, User, AppConfig, Task, ChecklistItem } from '../../core/models';
 
 declare var Chart: any;
 
@@ -144,6 +144,63 @@ declare var Chart: any;
           </div>
         </div>
 
+        <!-- BOTTOM REPORTS ROW -->
+        <div class=\"reports-grid\">
+
+          <!-- Attività recenti -->
+          <div class=\"card\">
+            <div class=\"card-hdr\">
+              <div>
+                <div class=\"card-eyebrow\">Attività recenti</div>
+                <div class=\"card-title\">Ultimi eventi</div>
+              </div>
+              <a routerLink=\"/projects\" class=\"btn btn-s btn-sm\">Tutto →</a>
+            </div>
+            <div class=\"activity-list\">
+              @for (ev of recentEvents(); track ev.id) {
+                <div class=\"activity-row\">
+                  <div class=\"av-bubble\" [style.background]=\"ev.color\">{{ ev.initials }}</div>
+                  <div class=\"activity-body\">
+                    <div class=\"activity-line\">
+                      <strong>{{ ev.userName }}</strong> {{ ev.action }}
+                    </div>
+                    <div class=\"activity-sub\">{{ ev.projectName }} · {{ ev.timeAgo }}</div>
+                  </div>
+                </div>
+              }
+              @if (recentEvents().length === 0) {
+                <div class=\"empty\" style=\"padding:20px\">Nessuna attività recente</div>
+              }
+            </div>
+          </div>
+
+          <!-- Copertura deliverables -->
+          <div class=\"card\">
+            <div class=\"card-hdr\">
+              <div>
+                <div class=\"card-eyebrow\">Documentazione</div>
+                <div class=\"card-title\">Copertura deliverables</div>
+              </div>
+              <span class=\"kpi-badge\">{{ coverageCompletati() }} / {{ coverageTotal() }} completa</span>
+            </div>
+            <div class=\"coverage-list\">
+              @for (item of coverageList(); track item.doc) {
+                <div class=\"coverage-row\">
+                  <span class=\"coverage-label\">{{ item.doc }}</span>
+                  <span class=\"coverage-pct\">{{ item.pct }}%</span>
+                  <div class=\"pbar coverage-bar\">
+                    <div class=\"pfill\" [class]=\"pctClass(item.pct)\" [style.width.%]=\"item.pct\"></div>
+                  </div>
+                </div>
+              }
+              @if (coverageList().length === 0) {
+                <div class=\"empty\" style=\"padding:20px\">Nessun documento configurato</div>
+              }
+            </div>
+          </div>
+
+        </div>
+
         <!-- TABLE -->
         <div class="card">
           <div class="card-hdr">
@@ -217,6 +274,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   tasks = signal<Task[]>([]);
   users = signal<User[]>([]);
   config = signal<AppConfig | null>(null);
+  checklist = signal<ChecklistItem[]>([]);
 
   filterStato = '';
   filterPrio = '';
@@ -244,6 +302,87 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   });
   taskAperti   = computed(() => this.tasks().filter(t => t.stato !== 'Completato').length);
   taskInCorso  = computed(() => this.tasks().filter(t => t.stato === 'In corso').length);
+
+  // ── Recent events (dai task completati recentemente) ──────────
+  recentEvents = computed(() => {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const projects = this.projects();
+    const users = this.users();
+    const events: any[] = [];
+
+    // Task completati come eventi
+    const completedTasks = this.tasks()
+      .filter(t => t.stato === 'Completato' && t.dataFine)
+      .sort((a, b) => new Date(b.dataFine).getTime() - new Date(a.dataFine).getTime())
+      .slice(0, 8);
+
+    completedTasks.forEach(t => {
+      const project = projects.find(p => p.id === t.projectId);
+      if (!project) return;
+      const owner = users.find(u => u.id === project.owner);
+      const name = owner?.name || 'Utente';
+      const parts = name.trim().split(' ');
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase();
+      const colors = ['#6EC0AA','#4a9e8a','#B8D8CE','#2E2E2E','#8aaca4'];
+      const colorIdx = name.charCodeAt(0) % colors.length;
+      events.push({
+        id: t.id,
+        userName: name,
+        initials,
+        color: colors[colorIdx],
+        action: `ha completato il task '${t.nome}'`,
+        projectName: project.nome,
+        timeAgo: this.timeAgo(t.dataFine),
+      });
+    });
+
+    // Checklist completate come eventi
+    const completedDocs = this.checklist()
+      .filter(c => c.completato)
+      .slice(0, 4);
+
+    completedDocs.forEach(c => {
+      const project = projects.find(p => p.id === c.projectId);
+      if (!project) return;
+      const owner = users.find(u => u.id === project.owner);
+      const name = owner?.name || 'Utente';
+      const parts = name.trim().split(' ');
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : name.slice(0, 2).toUpperCase();
+      events.push({
+        id: 'cl-' + c.id,
+        userName: name,
+        initials,
+        color: '#6EC0AA',
+        action: `ha caricato ${c.documento}`,
+        projectName: project.nome,
+        timeAgo: '—',
+      });
+    });
+
+    return events.slice(0, 6);
+  });
+
+  // ── Coverage deliverables (checklist per docField) ────────────
+  coverageList = computed(() => {
+    const docFields = this.config()?.docFields || [];
+    const checklist = this.checklist();
+    const projects = this.filtered();
+    const total = projects.length;
+    if (total === 0 || docFields.length === 0) return [];
+    return docFields.map(doc => {
+      const completati = checklist.filter(c =>
+        c.documento === doc && c.completato && projects.some(p => p.id === c.projectId)
+      ).length;
+      return { doc, pct: Math.round((completati / total) * 100) };
+    }).sort((a, b) => b.pct - a.pct);
+  });
+
+  coverageTotal     = computed(() => this.config()?.docFields?.length || 0);
+  coverageCompletati = computed(() => this.coverageList().filter(i => i.pct === 100).length);
 
   statoColors: Record<string, string> = {
     'In corso':       '#6EC0AA',
@@ -287,14 +426,16 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c, t] = await Promise.all([
+    const [p, u, c, t, cl] = await Promise.all([
       this.db.getProjects(), this.db.getUsers(),
-      this.db.getConfig(), this.db.getTasks()
+      this.db.getConfig(), this.db.getTasks(),
+      this.db.getChecklist()
     ]);
     this.projects.set(p);
     this.users.set(u);
     this.config.set(c);
     this.tasks.set(t);
+    this.checklist.set(cl);
     this.loading.set(false);
     setTimeout(() => this.renderCharts(), 100);
   }
@@ -419,4 +560,17 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   statoColor(s: string): string { return this.statoColors[s] || '#8aaca4'; }
 
   pctClass(n: number): string { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
+
+  timeAgo(dateStr: string): string {
+    if (!dateStr) return '—';
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return mins <= 1 ? 'Poco fa' : `${mins} min fa`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return hours === 1 ? '1 ora fa' : `${hours} ore fa`;
+    const days = Math.floor(hours / 24);
+    if (days === 1) return 'Ieri';
+    if (days < 7) return `${days} giorni fa`;
+    return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+  }
 }
