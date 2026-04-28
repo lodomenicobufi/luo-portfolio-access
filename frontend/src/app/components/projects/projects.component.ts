@@ -175,19 +175,13 @@ import { Project, User, AppConfig } from '../../core/models';
                 </select>
               </div>
             </div>
-            <div class="fr2">
-              <div class="fg">
-                <label class="fl">Completamento ({{ form.completamento }}%)</label>
-                <input type="range" min="0" max="100" [(ngModel)]="form.completamento" style="width:100%;accent-color:var(--mint)"/>
-              </div>
-              <div class="fg">
-                <label class="fl">Documentazione</label>
-                <select class="fi" [(ngModel)]="form.documentazione">
-                  <option>parziale</option>
-                  <option>totale</option>
-                  <option>non necessaria</option>
-                </select>
-              </div>
+            <div class="fg">
+              <label class="fl">Documentazione</label>
+              <select class="fi" [(ngModel)]="form.documentazione">
+                <option>parziale</option>
+                <option>totale</option>
+                <option>non necessaria</option>
+              </select>
             </div>
           </div>
           <div class="mfoot">
@@ -267,7 +261,6 @@ export class ProjectsComponent implements OnInit {
       owner: this.users()[0]?.id || '',
       stato: cfg?.statiProgetto[0] || '',
       dataInizio: '', dataFine: '',
-      completamento: 0,
       documentazione: 'parziale',
       priorita: cfg?.priorita[1] || 'Alta',
       repositoryUrl: ''

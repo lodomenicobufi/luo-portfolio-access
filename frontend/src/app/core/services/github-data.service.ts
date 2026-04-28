@@ -160,7 +160,7 @@ export class GithubDataService {
   }
 
   async saveProjects(projects: Project[]): Promise<void> {
-    const headers = ['id','nome','descrizione','tipologia','area','businessUnit','fornitore','owner','stato','dataInizio','dataFine','completamento','documentazione','priorita','repositoryUrl'];
+    const headers = ['id','nome','descrizione','tipologia','area','businessUnit','fornitore','owner','stato','dataInizio','dataFine','documentazione','priorita','repositoryUrl'];
     await this.writeFile('data/projects.csv', this.toCsv(projects, headers), 'Update projects');
   }
 
