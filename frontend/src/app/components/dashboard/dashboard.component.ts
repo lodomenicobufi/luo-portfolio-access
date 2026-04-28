@@ -1,7 +1,7 @@
 // src/app/components/dashboard/dashboard.component.ts
 import { Component, inject, OnInit, signal, computed, AfterViewInit, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -155,7 +155,7 @@ declare var Chart: any;
                 <div class="card-title">{{ filtered().length }} risultati</div>
               </div>
             </div>
-            <a routerLink="/projects" class="btn btn-s btn-sm" (click)="$event.stopPropagation()">Vedi tutti →</a>
+            <button class="btn btn-s btn-sm" (click)="$event.stopPropagation(); goTo('/projects')">Vedi tutti →</button>
           </div>
           @if (projectsOpen()) {
             <div class="tbl-wrap">
@@ -217,7 +217,7 @@ declare var Chart: any;
                 </div>
               </div>
             </div>
-            <a routerLink="/richieste" class="btn btn-s btn-sm" (click)="$event.stopPropagation()">Vedi tutte →</a>
+            <button class="btn btn-s btn-sm" (click)="$event.stopPropagation(); goTo('/richieste')">Vedi tutte →</button>
           </div>
           @if (richiesteOpen()) {
             @if (richiesteFiltered().length === 0) {
@@ -326,8 +326,11 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('donutChart') donutRef!: ElementRef;
   @ViewChild('lineChart')  lineRef!: ElementRef;
 
-  private db   = inject(GithubDataService);
-  private auth = inject(AuthService);
+  private db     = inject(GithubDataService);
+  private auth   = inject(AuthService);
+  private router = inject(Router);
+
+  goTo(path: string) { this.router.navigate([path]); }
 
   loading   = signal(true);
   projects  = signal<Project[]>([]);
