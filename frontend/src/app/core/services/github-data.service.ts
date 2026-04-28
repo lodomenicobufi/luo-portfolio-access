@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { User, Project, Task, ChecklistItem, Ticket, AppConfig } from '../models';
+import { User, Project, Task, ChecklistItem, Ticket, AppConfig, Richiesta } from '../models';
 
 export interface GithubConfig {
   owner: string;
@@ -385,4 +385,73 @@ export class GithubDataService {
     await this.writeFile('data/tasks.csv', this.toCsv(allTasks, headers), 'Update task ' + updatedTask.nome);
     return allTasks.filter(t => t.projectId === updatedTask.projectId);
   }
+
+  // ── RICHIESTE ────────────────────────────────────────────────────
+  private richiesteHeaders = ['id','titolo','descrizione','buRiferimento','progettoRiferimento',
+    'richiedenteId','stato','note','dataCreazione','dataEsito','gestitaId','progettoCreato'];
+
+  async getRichieste(): Promise<Richiesta[]> {
+    try {
+      const csv = await this.readFile('data/richieste.csv');
+      return this.parseCsv<Richiesta>(csv);
+    } catch { return []; }
+  }
+
+  async saveRichieste(richieste: Richiesta[]): Promise<void> {
+    await this.writeFile('data/richieste.csv', this.toCsv(richieste, this.richiesteHeaders), 'Update richieste');
+  }
+
+  async createRichiesta(r: Omit<Richiesta, 'id'>): Promise<Richiesta> {
+    const all = await this.getRichieste();
+    const newR: Richiesta = { ...r as any, id: 'req-' + Date.now() };
+    all.push(newR);
+    await this.saveRichieste(all);
+    return newR;
+  }
+
+  async updateRichiesta(id: string, updates: Partial<Richiesta>): Promise<void> {
+    const all = await this.getRichieste();
+    const idx = all.findIndex(r => r.id === id);
+    if (idx >= 0) { all[idx] = { ...all[idx], ...updates }; await this.saveRichieste(all); }
+  }
+
+  async accettaRichiesta(id: string, gestitaId: string, projects: Project[], users: User[], config: AppConfig): Promise<Project> {
+    const all = await this.getRichieste();
+    const r = all.find(r => r.id === id)!;
+
+    // Costruisci descrizione: progetto di riferimento + descrizione richiesta
+    let desc = r.descrizione;
+    if (r.progettoRiferimento) {
+      const pRif = projects.find(p => p.id === r.progettoRiferimento);
+      if (pRif) desc = `[Rif: ${pRif.nome}] ${desc}`;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const newProject = await this.createProject({
+      nome: r.titolo,
+      descrizione: desc,
+      tipologia: config.tipologie[0] || '',
+      area: '',
+      businessUnit: r.buRiferimento,
+      fornitore: '',
+      owner: gestitaId,
+      stato: 'Pianificazione',
+      dataInizio: today,
+      dataFine: '',
+      documentazione: 'parziale',
+      priorita: 'Media',
+      repositoryUrl: '',
+    });
+
+    const idx = all.findIndex(r => r.id === id);
+    all[idx] = { ...all[idx], stato: 'Accettata', dataEsito: today, gestitaId, progettoCreato: newProject.id };
+    await this.saveRichieste(all);
+    return newProject;
+  }
+
+  async respingiRichiesta(id: string, gestitaId: string, note: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    await this.updateRichiesta(id, { stato: 'Respinta', note, dataEsito: today, gestitaId });
+  }
 }
+

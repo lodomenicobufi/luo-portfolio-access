@@ -83,6 +83,21 @@ export interface SubTask {
   projectId: string;
 }
 
+export interface Richiesta {
+  id: string;
+  titolo: string;
+  descrizione: string;
+  buRiferimento: string;
+  progettoRiferimento: string; // id progetto o ''
+  richiedenteId: string;       // user id
+  stato: 'In valutazione' | 'Accettata' | 'Respinta';
+  note: string;                // motivazione in caso di rifiuto
+  dataCreazione: string;
+  dataEsito: string;
+  gestitaId: string;           // user id di chi ha gestito
+  progettoCreato: string;      // id del progetto generato (se accettata)
+}
+
 // Nomi fissi dei task in sequenza
 export const TASK_SEQUENCE = [
   'REQUISITI',
