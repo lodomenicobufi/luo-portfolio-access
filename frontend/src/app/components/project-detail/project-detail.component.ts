@@ -1,5 +1,5 @@
 // src/app/components/project-detail/project-detail.component.ts
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -40,7 +40,9 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           }
         </div>
 
-        @if (editMode()) {
+        <div class="detail-layout">
+          <div class="detail-main">
+
           <div class="card" style="margin-bottom:16px">
             <div class="sec-div">Modifica Progetto</div>
             <div class="fr2">
@@ -60,14 +62,10 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                   @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
                 </select></div>
             </div>
-            <div class="fr2">
-              <div class="fg"><label class="fl">Completamento ({{ editForm.completamento }}%)</label>
-                <input type="range" min="0" max="100" [(ngModel)]="editForm.completamento" style="width:100%;accent-color:var(--green)"/></div>
-              <div class="fg"><label class="fl">Documentazione</label>
+            <div class="fg"><label class="fl">Documentazione</label>
                 <select class="fi" [(ngModel)]="editForm.documentazione">
                   <option>parziale</option><option>totale</option><option>non necessaria</option>
                 </select></div>
-            </div>
             <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
               {{ saving() ? 'Salvataggio...' : 'Salva' }}
             </button>
@@ -321,11 +319,122 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
           </div>
         }
+          </div><!-- /detail-main -->
+
+          <!-- PANNELLO PROGETTI STESSA BU -->
+          <div class="detail-side">
+            <div class="card">
+              <div class="card-hdr" style="padding:14px 16px">
+                <div>
+                  <div class="card-eyebrow">Stessa BU</div>
+                  <div class="card-title" style="font-size:13px">{{ project()!.businessUnit }}</div>
+                </div>
+              </div>
+              @if (sameBuProjects().length === 0) {
+                <div class="empty" style="padding:16px;font-size:12px">Nessun altro progetto</div>
+              } @else {
+                <div class="bu-proj-list">
+                  @for (p of sameBuProjects(); track p.id) {
+                    <a [routerLink]="['/projects', p.id]" class="bu-proj-row">
+                      <div class="bu-proj-nome">{{ p.nome }}</div>
+                      <div class="bu-proj-meta">
+                        <span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()" style="font-size:10px">{{ p.priorita }}</span>
+                        <span class="bu-proj-pct">{{ p.completamento }}%</span>
+                      </div>
+                      <div class="pbar" style="margin-top:4px">
+                        <div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
+                      </div>
+                    </a>
+                  }
+                </div>
+              }
+            </div>
+          </div><!-- /detail-side -->
+
+        </div><!-- /detail-layout -->
+
+        <!-- GANTT -->
+        <div class="card gantt-card">
+          <div class="card-hdr">
+            <div>
+              <div class="card-eyebrow">Pianificazione</div>
+              <div class="card-title">Gantt dei task</div>
+            </div>
+          </div>
+          <div class="gantt-wrap">
+            <div class="gantt-labels">
+              @for (t of tasks(); track t.id) {
+                <div class="gantt-label" [class.gantt-done]="t.stato==='Completato'" [class.gantt-active]="t.stato==='In corso'">
+                  <span class="gantt-task-num">{{ getTaskOrdine(t) }}</span>
+                  {{ t.nome }}
+                </div>
+              }
+            </div>
+            <div class="gantt-chart" #ganttChart>
+              <div class="gantt-header">
+                @for (col of ganttColumns(); track col.label) {
+                  <div class="gantt-col-hdr" [style.width.px]="ganttDayW">{{ col.label }}</div>
+                }
+              </div>
+              @for (t of tasks(); track t.id; let i = $index) {
+                <div class="gantt-row">
+                  @for (col of ganttColumns(); track col.label) {
+                    <div class="gantt-cell" [style.width.px]="ganttDayW"></div>
+                  }
+                  <div class="gantt-bar"
+                    [class.gantt-bar-done]="t.stato==='Completato'"
+                    [class.gantt-bar-active]="t.stato==='In corso'"
+                    [class.gantt-bar-todo]="t.stato==='Da fare'"
+                    [style.left.px]="ganttBarLeft(t)"
+                    [style.width.px]="ganttBarWidth(t)">
+                    <span class="gantt-bar-label">{{ t.nome }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
       }
     </div>
   `,
   styles: [`
+    /* ── 2-column layout ── */
+    .detail-layout { display:grid; grid-template-columns: minmax(0,1fr) 300px; gap:20px; align-items:start; }
+    .detail-main { min-width:0; }
+    .detail-side { position:sticky; top:20px; }
+
+    /* ── BU projects panel ── */
+    .bu-proj-list { display:flex; flex-direction:column; }
+    .bu-proj-row { display:block; padding:10px 16px; border-bottom:1px solid rgba(46,46,46,0.06); text-decoration:none; color:var(--ink); transition:background .12s; }
+    .bu-proj-row:last-child { border-bottom:none; }
+    .bu-proj-row:hover { background:rgba(110,192,170,0.05); }
+    .bu-proj-nome { font-size:13px; font-weight:600; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bu-proj-meta { display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+    .bu-proj-pct { font-size:11px; font-weight:600; color:rgba(46,46,46,0.5); }
+
+    /* ── Gantt ── */
+    .gantt-card { overflow:hidden; margin-bottom:16px; }
+    .gantt-wrap { display:flex; overflow-x:auto; }
+    .gantt-labels { flex-shrink:0; width:160px; padding-top:32px; border-right:1px solid rgba(46,46,46,0.08); }
+    .gantt-label { height:32px; display:flex; align-items:center; gap:6px; padding:0 12px; font-size:11.5px; font-weight:500; color:rgba(46,46,46,0.6); white-space:nowrap; border-bottom:1px solid rgba(46,46,46,0.04); }
+    .gantt-label.gantt-done { color:var(--mint-dd); }
+    .gantt-label.gantt-active { color:var(--ink); font-weight:700; }
+    .gantt-task-num { width:18px; height:18px; border-radius:50%; background:rgba(46,46,46,0.1); color:var(--ink); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+    .gantt-chart { flex:1; position:relative; }
+    .gantt-header { display:flex; height:32px; border-bottom:1px solid rgba(46,46,46,0.1); background:rgba(46,46,46,0.02); }
+    .gantt-col-hdr { flex-shrink:0; height:32px; display:flex; align-items:center; justify-content:center; font-size:9px; font-weight:600; color:rgba(46,46,46,0.4); border-right:1px solid rgba(46,46,46,0.04); letter-spacing:.3px; }
+    .gantt-row { position:relative; height:32px; display:flex; border-bottom:1px solid rgba(46,46,46,0.04); }
+    .gantt-cell { flex-shrink:0; height:32px; border-right:1px solid rgba(46,46,46,0.04); }
+    .gantt-bar { position:absolute; top:5px; height:22px; border-radius:4px; display:flex; align-items:center; padding:0 8px; min-width:20px; z-index:1; transition:opacity .15s; }
+    .gantt-bar:hover { opacity:.85; }
+    .gantt-bar-todo { background:rgba(184,216,206,0.5); border:1px solid rgba(110,192,170,0.3); }
+    .gantt-bar-active { background:#6EC0AA; border:1px solid #4a9e8a; }
+    .gantt-bar-done { background:#2E2E2E; border:1px solid #1a1a1a; }
+    .gantt-bar-label { font-size:10px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+    .gantt-bar-active .gantt-bar-label, .gantt-bar-done .gantt-bar-label { color:#fff; }
+
     .detail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:16px; }
     .dl { font-size:11px; font-weight:700; color:var(--gray-400); text-transform:uppercase; letter-spacing:.4px; margin-bottom:2px; }
     .dv { font-size:13px; font-weight:500; }
@@ -376,6 +485,7 @@ export class ProjectDetailComponent implements OnInit {
   loading = signal(true);
   saving = signal(false);
   project = signal<Project | null>(null);
+  allProjects = signal<Project[]>([]);
   tasks = signal<Task[]>([]);
   subtasks = signal<any[]>([]);
   checklist = signal<ChecklistItem[]>([]);
@@ -391,6 +501,89 @@ export class ProjectDetailComponent implements OnInit {
   expandedSubTaskId = signal<string>('');
   newSubTaskMap: Record<string, Record<string, string>> = {};
   newTicket: Partial<Ticket> = { titolo:'', descrizione:'', stato:'Aperto', priorita:'Media', riferimentoSD:'', dataApertura: new Date().toISOString().split('T')[0], note:'' };
+
+  readonly ganttDayW = 28;
+  readonly TASK_DURATIONS: Record<string, number> = {
+    'REQUISITI': 7, 'TEMPI E STIME': 7, 'SVILUPPO': 15,
+    'COLLAUDO LDT': 7, 'COLLAUDO BU': 7, 'PRODUZIONE': 15, 'ADOPTION': 7
+  };
+
+  // ── BU panel ─────────────────────────────────────────
+  sameBuProjects = computed(() => {
+    const p = this.project();
+    if (!p?.businessUnit) return [];
+    return this.allProjects()
+      .filter(x => x.id !== p.id && x.businessUnit === p.businessUnit)
+      .sort((a, b) => {
+        const prioOrder: Record<string,number> = { 'Critica':0,'Alta':1,'Media':2,'Bassa':3 };
+        const pd = (prioOrder[a.priorita] ?? 9) - (prioOrder[b.priorita] ?? 9);
+        return pd !== 0 ? pd : b.completamento - a.completamento;
+      });
+  });
+
+  pctClass(n: number) { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
+
+  // ── Gantt ─────────────────────────────────────────────
+  ganttStart = computed(() => {
+    const p = this.project();
+    if (p?.dataInizio) return new Date(p.dataInizio);
+    const tasks = this.tasks();
+    const dates = tasks.map(t => t.dataInizio).filter(Boolean).map(d => new Date(d));
+    return dates.length ? new Date(Math.min(...dates.map(d => d.getTime()))) : new Date();
+  });
+
+  ganttEnd = computed(() => {
+    const start = this.ganttStart();
+    const tasks = this.tasks();
+    const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    let totalDays = 0;
+    TASK_SEQUENCE.forEach(name => { totalDays += this.TASK_DURATIONS[name] || 7; });
+    // Use real end dates if available
+    const realEnds = tasks.map(t => t.dataFine).filter(Boolean).map(d => new Date(d));
+    const theoreticalEnd = new Date(start.getTime() + totalDays * 86400000);
+    return realEnds.length ? new Date(Math.max(theoreticalEnd.getTime(), ...realEnds.map(d => d.getTime()))) : theoreticalEnd;
+  });
+
+  ganttColumns = computed(() => {
+    const start = this.ganttStart();
+    const end = this.ganttEnd();
+    const cols: { label: string; date: Date }[] = [];
+    const cur = new Date(start);
+    while (cur <= end) {
+      const dow = cur.getDay();
+      cols.push({
+        label: dow === 1 ? cur.toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' }) : '',
+        date: new Date(cur)
+      });
+      cur.setDate(cur.getDate() + 1);
+    }
+    return cols;
+  });
+
+  ganttBarLeft(t: Task): number {
+    const start = this.ganttStart();
+    const taskStart = t.dataInizio ? new Date(t.dataInizio) : this.calcTheoreticalStart(t);
+    const diff = Math.floor((taskStart.getTime() - start.getTime()) / 86400000);
+    return Math.max(0, diff) * this.ganttDayW;
+  }
+
+  ganttBarWidth(t: Task): number {
+    if (t.dataInizio && t.dataFine) {
+      const s = new Date(t.dataInizio); const e = new Date(t.dataFine);
+      const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
+      return days * this.ganttDayW;
+    }
+    return (this.TASK_DURATIONS[t.nome] || 7) * this.ganttDayW;
+  }
+
+  calcTheoreticalStart(t: Task): Date {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const idx = SEQUENCE.indexOf(t.nome);
+    const start = this.ganttStart();
+    let offset = 0;
+    for (let i = 0; i < idx; i++) offset += this.TASK_DURATIONS[SEQUENCE[i]] || 7;
+    return new Date(start.getTime() + offset * 86400000);
+  }
 
   getTabs() {
     const doneCount = this.tasks().filter(t => t.stato === 'Completato').length;
@@ -415,6 +608,7 @@ export class ProjectDetailComponent implements OnInit {
     ]);
     const proj = projects.find(p => p.id === id) || null;
     this.project.set(proj);
+    this.allProjects.set(projects);
     this.tasks.set(tasks);
     this.subtasks.set(subtasks);
     this.checklist.set(checklist);
