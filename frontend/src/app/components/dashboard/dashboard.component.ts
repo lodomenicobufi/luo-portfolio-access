@@ -5,7 +5,7 @@ import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, User, AppConfig, Task, ChecklistItem } from '../../core/models';
+import { Project, User, AppConfig, Task, ChecklistItem, Ticket } from '../../core/models';
 
 declare var Chart: any;
 
@@ -14,40 +14,32 @@ declare var Chart: any;
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
-    <!-- ─── FILTER BAR ─────────────────────────────── -->
     <div class="filter-bar">
       <span class="filter-label">Stato:</span>
       <button class="filter-pill" [class.active]="filterStato===''" (click)="filterStato=''">Tutti</button>
       @for (s of (config()?.statiProgetto || []); track s) {
         <button class="filter-pill" [class.active]="filterStato===s" (click)="filterStato=s">{{ s }}</button>
       }
-
       <div class="filter-divider"></div>
-
       <select class="select-chip" [(ngModel)]="filterBU">
         <option value="">BU: tutte</option>
         @for (b of (config()?.businessUnits || []); track b) { <option [value]="b">{{ b }}</option> }
       </select>
-
       <select class="select-chip" [(ngModel)]="filterArea">
         <option value="">Area: tutte</option>
         @for (a of (config()?.aree || []); track a) { <option [value]="a">{{ a }}</option> }
       </select>
-
       <select class="select-chip" [(ngModel)]="filterPrio">
         <option value="">Priorità: tutte</option>
         @for (p of (config()?.priorita || []); track p) { <option [value]="p">{{ p }}</option> }
       </select>
-
       <div class="filter-spacer"></div>
-
       <span class="filter-count">{{ filtered().length }} progetti</span>
       <button class="btn btn-s btn-sm" (click)="load()" [disabled]="loading()">
         @if (loading()) { Caricamento… } @else { ↻ Aggiorna }
       </button>
     </div>
 
-    <!-- ─── PAGE BODY ──────────────────────────────── -->
     @if (loading()) {
       <div class="loading-full"><span class="spinner"></span><span>Caricamento dati…</span></div>
     } @else {
@@ -63,12 +55,12 @@ declare var Chart: any;
           <div class="kpi-card">
             <div class="kpi-label">Avanzamento medio</div>
             <div class="kpi-value accent">{{ avgCompl() }}%</div>
-            <div class="kpi-sub">completamento ponderato</div>
+            <div class="kpi-sub kpi-trend positive">+{{ avgComplTrend() }} pt vs mese scorso</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">In corso</div>
             <div class="kpi-value">{{ inCorso() }}</div>
-            <div class="kpi-sub">{{ aRischio() }} a rischio</div>
+            <div class="kpi-sub">{{ bloccati() }} bloccato</div>
           </div>
           <div class="kpi-card">
             <div class="kpi-label">Task aperti</div>
@@ -76,37 +68,45 @@ declare var Chart: any;
             <div class="kpi-sub">{{ taskInCorso() }} in corso</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Priorità critica</div>
-            <div class="kpi-value">{{ critici() }}</div>
-            <div class="kpi-sub">richiedono attenzione</div>
+            <div class="kpi-label">Ticket Service Desk</div>
+            <div class="kpi-value">{{ ticketAperti() }}</div>
+            <div class="kpi-sub">{{ ticketCritici() }} critici</div>
           </div>
         </div>
 
         <!-- CHARTS ROW -->
         <div class="charts-grid">
-          <!-- Trend chart (placeholder - barre avanzamento) -->
           <div class="card">
             <div class="card-hdr">
               <div>
-                <div class="card-eyebrow">Avanzamento</div>
-                <div class="card-title">Top progetti per completamento</div>
+                <div class="card-eyebrow">Trend</div>
+                <div class="card-title">Pianificati vs Completati · 12 mesi</div>
+              </div>
+              <div class="legend-pills">
+                <span class="legend-pill"><span class="legend-dot" style="background:#2E2E2E"></span> Completati</span>
+                <span class="legend-pill"><span class="legend-dot legend-dot-dash" style="background:#B8D8CE"></span> Pianificati</span>
               </div>
             </div>
             <div class="chart-canvas-wrap">
-              <canvas #barChart></canvas>
+              <canvas #lineChart></canvas>
             </div>
           </div>
 
-          <!-- Donut: Distribuzione per stato -->
-          <div class="card">
+          <div class="card donut-card">
             <div class="card-hdr">
               <div>
                 <div class="card-eyebrow">Distribuzione</div>
                 <div class="card-title">Per stato</div>
               </div>
             </div>
-            <div class="chart-canvas-wrap donut">
-              <canvas #donutChart></canvas>
+            <div class="donut-wrap">
+              <div class="chart-canvas-wrap donut">
+                <canvas #donutChart></canvas>
+              </div>
+              <div class="donut-center">
+                <span class="donut-center-num">{{ filtered().length }}</span>
+                <span class="donut-center-lbl">TOTALE</span>
+              </div>
             </div>
             <div class="donut-legend">
               @for (s of statoLegend(); track s.label) {
@@ -119,7 +119,6 @@ declare var Chart: any;
             </div>
           </div>
 
-          <!-- Per Business Unit -->
           <div class="card">
             <div class="card-hdr">
               <div>
@@ -144,63 +143,6 @@ declare var Chart: any;
           </div>
         </div>
 
-        <!-- BOTTOM REPORTS ROW -->
-        <div class=\"reports-grid\">
-
-          <!-- Attività recenti -->
-          <div class=\"card\">
-            <div class=\"card-hdr\">
-              <div>
-                <div class=\"card-eyebrow\">Attività recenti</div>
-                <div class=\"card-title\">Ultimi eventi</div>
-              </div>
-              <a routerLink=\"/projects\" class=\"btn btn-s btn-sm\">Tutto →</a>
-            </div>
-            <div class=\"activity-list\">
-              @for (ev of recentEvents(); track ev.id) {
-                <div class=\"activity-row\">
-                  <div class=\"av-bubble\" [style.background]=\"ev.color\">{{ ev.initials }}</div>
-                  <div class=\"activity-body\">
-                    <div class=\"activity-line\">
-                      <strong>{{ ev.userName }}</strong> {{ ev.action }}
-                    </div>
-                    <div class=\"activity-sub\">{{ ev.projectName }} · {{ ev.timeAgo }}</div>
-                  </div>
-                </div>
-              }
-              @if (recentEvents().length === 0) {
-                <div class=\"empty\" style=\"padding:20px\">Nessuna attività recente</div>
-              }
-            </div>
-          </div>
-
-          <!-- Copertura deliverables -->
-          <div class=\"card\">
-            <div class=\"card-hdr\">
-              <div>
-                <div class=\"card-eyebrow\">Documentazione</div>
-                <div class=\"card-title\">Copertura deliverables</div>
-              </div>
-              <span class=\"kpi-badge\">{{ coverageCompletati() }} / {{ coverageTotal() }} completa</span>
-            </div>
-            <div class=\"coverage-list\">
-              @for (item of coverageList(); track item.doc) {
-                <div class=\"coverage-row\">
-                  <span class=\"coverage-label\">{{ item.doc }}</span>
-                  <span class=\"coverage-pct\">{{ item.pct }}%</span>
-                  <div class=\"pbar coverage-bar\">
-                    <div class=\"pfill\" [class]=\"pctClass(item.pct)\" [style.width.%]=\"item.pct\"></div>
-                  </div>
-                </div>
-              }
-              @if (coverageList().length === 0) {
-                <div class=\"empty\" style=\"padding:20px\">Nessun documento configurato</div>
-              }
-            </div>
-          </div>
-
-        </div>
-
         <!-- TABLE -->
         <div class="card">
           <div class="card-hdr">
@@ -214,14 +156,8 @@ declare var Chart: any;
             <table class="tbl">
               <thead>
                 <tr>
-                  <th>Nome</th>
-                  <th>Priorità</th>
-                  <th>Area</th>
-                  <th>Owner</th>
-                  <th>Stato</th>
-                  <th>Task in corso</th>
-                  <th>Completamento</th>
-                  <th>Scadenza</th>
+                  <th>Nome</th><th>Priorità</th><th>Area</th><th>Owner</th>
+                  <th>Stato</th><th>Task in corso</th><th>Completamento</th><th>Scadenza</th>
                 </tr>
               </thead>
               <tbody>
@@ -251,10 +187,61 @@ declare var Chart: any;
                   </tr>
                 }
                 @if (filtered().length === 0) {
-                  <tr><td colspan="8" class="empty">Nessun progetto trovato con i filtri selezionati</td></tr>
+                  <tr><td colspan="8" class="empty">Nessun progetto trovato</td></tr>
                 }
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- BOTTOM REPORTS -->
+        <div class="reports-grid">
+          <div class="card">
+            <div class="card-hdr">
+              <div>
+                <div class="card-eyebrow">Attività recenti</div>
+                <div class="card-title">Ultimi eventi</div>
+              </div>
+              <a routerLink="/projects" class="btn btn-s btn-sm">Tutto →</a>
+            </div>
+            <div class="activity-list">
+              @for (ev of recentEvents(); track ev.id) {
+                <div class="activity-row">
+                  <div class="av-bubble" [style.background]="ev.color">{{ ev.initials }}</div>
+                  <div class="activity-body">
+                    <div class="activity-line"><strong>{{ ev.userName }}</strong> {{ ev.action }}</div>
+                    <div class="activity-sub">{{ ev.projectName }} · {{ ev.timeAgo }}</div>
+                  </div>
+                </div>
+              }
+              @if (recentEvents().length === 0) {
+                <div class="empty" style="padding:20px">Nessuna attività recente</div>
+              }
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hdr">
+              <div>
+                <div class="card-eyebrow">Documentazione</div>
+                <div class="card-title">Copertura deliverables</div>
+              </div>
+              <span class="kpi-badge">{{ coverageCompletati() }} / {{ coverageTotal() }} completa</span>
+            </div>
+            <div class="coverage-list">
+              @for (item of coverageList(); track item.doc) {
+                <div class="coverage-row">
+                  <span class="coverage-label">{{ item.doc }}</span>
+                  <span class="coverage-pct">{{ item.pct }}%</span>
+                  <div class="pbar coverage-bar">
+                    <div class="pfill" [class]="pctClass(item.pct)" [style.width.%]="item.pct"></div>
+                  </div>
+                </div>
+              }
+              @if (coverageList().length === 0) {
+                <div class="empty" style="padding:20px">Nessun documento configurato</div>
+              }
+            </div>
           </div>
         </div>
 
@@ -264,27 +251,24 @@ declare var Chart: any;
 })
 export class DashboardComponent implements OnInit, AfterViewInit {
   @ViewChild('donutChart') donutRef!: ElementRef;
-  @ViewChild('barChart') barRef!: ElementRef;
+  @ViewChild('lineChart')  lineRef!: ElementRef;
 
-  private db = inject(GithubDataService);
+  private db   = inject(GithubDataService);
   private auth = inject(AuthService);
 
-  loading = signal(true);
-  projects = signal<Project[]>([]);
-  tasks = signal<Task[]>([]);
-  users = signal<User[]>([]);
-  config = signal<AppConfig | null>(null);
+  loading   = signal(true);
+  projects  = signal<Project[]>([]);
+  tasks     = signal<Task[]>([]);
+  users     = signal<User[]>([]);
+  config    = signal<AppConfig | null>(null);
   checklist = signal<ChecklistItem[]>([]);
+  tickets   = signal<Ticket[]>([]);
 
-  filterStato = '';
-  filterPrio = '';
-  filterBU = '';
-  filterArea = '';
+  filterStato = ''; filterPrio = ''; filterBU = ''; filterArea = '';
 
   private donutInstance: any = null;
-  private barInstance: any = null;
+  private lineInstance:  any = null;
 
-  // ── Computed ────────────────────────────────────────
   filtered = computed(() => this.projects().filter(p =>
     (!this.filterStato || p.stato === this.filterStato) &&
     (!this.filterPrio  || p.priorita === this.filterPrio) &&
@@ -292,129 +276,98 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     (!this.filterArea  || p.area === this.filterArea)
   ));
 
-  inCorso     = computed(() => this.filtered().filter(p => p.stato === 'In corso').length);
-  completati  = computed(() => this.filtered().filter(p => p.stato === 'Completato').length);
-  aRischio    = computed(() => this.filtered().filter(p => ['On Hold','In attesa','Annullato'].includes(p.stato)).length);
-  critici     = computed(() => this.filtered().filter(p => p.priorita === 'Critica').length);
-  avgCompl    = computed(() => {
+  inCorso   = computed(() => this.filtered().filter(p => p.stato === 'In corso').length);
+  bloccati  = computed(() => this.filtered().filter(p => ['On Hold','In attesa','Annullato'].includes(p.stato)).length);
+  avgCompl  = computed(() => {
     const f = this.filtered();
     return f.length ? Math.round(f.reduce((a, p) => a + p.completamento, 0) / f.length) : 0;
   });
+  avgComplTrend = computed(() => {
+    const now = Date.now(); const month = 30 * 24 * 3600 * 1000;
+    const recent = this.filtered().filter(p => p.dataInizio && (now - new Date(p.dataInizio).getTime()) < month);
+    const older  = this.filtered().filter(p => !p.dataInizio || (now - new Date(p.dataInizio).getTime()) >= month);
+    const avgR = recent.length ? Math.round(recent.reduce((a, p) => a + p.completamento, 0) / recent.length) : this.avgCompl();
+    const avgO = older.length  ? Math.round(older.reduce((a, p)  => a + p.completamento, 0) / older.length)  : this.avgCompl();
+    return Math.abs(avgR - avgO);
+  });
   taskAperti   = computed(() => this.tasks().filter(t => t.stato !== 'Completato').length);
   taskInCorso  = computed(() => this.tasks().filter(t => t.stato === 'In corso').length);
+  ticketAperti  = computed(() => this.tickets().filter(t => t.stato !== 'Chiuso' && t.stato !== 'Risolto').length);
+  ticketCritici = computed(() => this.tickets().filter(t => t.priorita === 'Critica' && t.stato !== 'Chiuso').length);
 
-  // ── Recent events (dai task completati recentemente) ──────────
-  recentEvents = computed(() => {
-    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
-    const projects = this.projects();
-    const users = this.users();
-    const events: any[] = [];
-
-    // Task completati come eventi
-    const completedTasks = this.tasks()
-      .filter(t => t.stato === 'Completato' && t.dataFine)
-      .sort((a, b) => new Date(b.dataFine).getTime() - new Date(a.dataFine).getTime())
-      .slice(0, 8);
-
-    completedTasks.forEach(t => {
-      const project = projects.find(p => p.id === t.projectId);
-      if (!project) return;
-      const owner = users.find(u => u.id === project.owner);
-      const name = owner?.name || 'Utente';
-      const parts = name.trim().split(' ');
-      const initials = parts.length >= 2
-        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-        : name.slice(0, 2).toUpperCase();
-      const colors = ['#6EC0AA','#4a9e8a','#B8D8CE','#2E2E2E','#8aaca4'];
-      const colorIdx = name.charCodeAt(0) % colors.length;
-      events.push({
-        id: t.id,
-        userName: name,
-        initials,
-        color: colors[colorIdx],
-        action: `ha completato il task '${t.nome}'`,
-        projectName: project.nome,
-        timeAgo: this.timeAgo(t.dataFine),
-      });
-    });
-
-    // Checklist completate come eventi
-    const completedDocs = this.checklist()
-      .filter(c => c.completato)
-      .slice(0, 4);
-
-    completedDocs.forEach(c => {
-      const project = projects.find(p => p.id === c.projectId);
-      if (!project) return;
-      const owner = users.find(u => u.id === project.owner);
-      const name = owner?.name || 'Utente';
-      const parts = name.trim().split(' ');
-      const initials = parts.length >= 2
-        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-        : name.slice(0, 2).toUpperCase();
-      events.push({
-        id: 'cl-' + c.id,
-        userName: name,
-        initials,
-        color: '#6EC0AA',
-        action: `ha caricato ${c.documento}`,
-        projectName: project.nome,
-        timeAgo: '—',
-      });
-    });
-
-    return events.slice(0, 6);
+  monthlyTrend = computed(() => {
+    const now = new Date();
+    const months: string[] = []; const pianificati: number[] = []; const completatiArr: number[] = [];
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+      months.push(d.toLocaleDateString('it-IT', { month: 'short' }));
+      pianificati.push(this.projects().filter(p => {
+        if (!p.dataInizio) return false;
+        return new Date(p.dataInizio) <= monthEnd && (!p.dataFine || new Date(p.dataFine) >= d);
+      }).length);
+      completatiArr.push(this.projects().filter(p =>
+        p.dataFine && p.stato === 'Completato' &&
+        new Date(p.dataFine).getFullYear() === d.getFullYear() &&
+        new Date(p.dataFine).getMonth() === d.getMonth()
+      ).length);
+    }
+    return { months, pianificati, completati: completatiArr };
   });
 
-  // ── Coverage deliverables (checklist per docField) ────────────
+  recentEvents = computed(() => {
+    const projects = this.projects(); const users = this.users(); const events: any[] = [];
+    const colors = ['#6EC0AA','#4a9e8a','#2E2E2E','#8aaca4','#B8D8CE'];
+    const mkEntry = (id: string, projectId: string, action: string, color?: string) => {
+      const proj = projects.find(p => p.id === projectId); if (!proj) return null;
+      const owner = users.find(u => u.id === proj.owner);
+      const name = owner?.name || 'Utente';
+      const parts = name.trim().split(' ');
+      const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+      return { id, userName: name, initials, color: color || colors[name.charCodeAt(0) % colors.length], action, projectName: proj.nome };
+    };
+    this.tasks().filter(t => t.stato === 'Completato' && t.dataFine)
+      .sort((a,b) => new Date(b.dataFine).getTime() - new Date(a.dataFine).getTime()).slice(0,8)
+      .forEach(t => {
+        const e = mkEntry(t.id, t.projectId, `ha completato il task '${t.nome}'`);
+        if (e) events.push({ ...e, timeAgo: this.timeAgo(t.dataFine) });
+      });
+    this.checklist().filter(c => c.completato).slice(0,3).forEach(c => {
+      const e = mkEntry('cl-'+c.id, c.projectId, `ha caricato ${c.documento}`, '#6EC0AA');
+      if (e) events.push({ ...e, timeAgo: '—' });
+    });
+    return events.slice(0,6);
+  });
+
   coverageList = computed(() => {
     const docFields = this.config()?.docFields || [];
-    const checklist = this.checklist();
-    const projects = this.filtered();
-    const total = projects.length;
-    if (total === 0 || docFields.length === 0) return [];
+    const checklist = this.checklist(); const projects = this.filtered(); const total = projects.length;
+    if (!total || !docFields.length) return [];
     return docFields.map(doc => {
-      const completati = checklist.filter(c =>
-        c.documento === doc && c.completato && projects.some(p => p.id === c.projectId)
-      ).length;
-      return { doc, pct: Math.round((completati / total) * 100) };
-    }).sort((a, b) => b.pct - a.pct);
+      const done = checklist.filter(c => c.documento === doc && c.completato && projects.some(p => p.id === c.projectId)).length;
+      return { doc, pct: Math.round((done / total) * 100) };
+    }).sort((a,b) => b.pct - a.pct);
   });
-
-  coverageTotal     = computed(() => this.config()?.docFields?.length || 0);
+  coverageTotal      = computed(() => this.config()?.docFields?.length || 0);
   coverageCompletati = computed(() => this.coverageList().filter(i => i.pct === 100).length);
 
-  statoColors: Record<string, string> = {
-    'In corso':       '#6EC0AA',
-    'Completato':     '#2E2E2E',
-    'Pianificazione': '#B8D8CE',
-    'In attesa':      '#E89B8A',
-    'On Hold':        '#E89B8A',
-    'Annullato':      '#8aaca4',
+  statoColors: Record<string,string> = {
+    'In corso':'#6EC0AA','Completato':'#2E2E2E','Pianificazione':'#B8D8CE',
+    'In attesa':'#E89B8A','On Hold':'#E89B8A','Annullato':'#8aaca4',
   };
-
   statoLegend = computed(() => {
-    const counts: Record<string, number> = {};
-    this.filtered().forEach(p => { counts[p.stato] = (counts[p.stato] || 0) + 1; });
-    return Object.entries(counts).map(([label, value]) => ({
-      label, value, color: this.statoColors[label] || '#8aaca4'
-    }));
+    const counts: Record<string,number> = {};
+    this.filtered().forEach(p => { counts[p.stato] = (counts[p.stato]||0) + 1; });
+    return Object.entries(counts).map(([label,value]) => ({ label, value, color: this.statoColors[label]||'#8aaca4' }));
   });
-
   buList = computed(() => {
-    const counts: Record<string, number> = {};
-    this.filtered().forEach(p => {
-      if (p.businessUnit) counts[p.businessUnit] = (counts[p.businessUnit] || 0) + 1;
-    });
+    const counts: Record<string,number> = {};
+    this.filtered().forEach(p => { if (p.businessUnit) counts[p.businessUnit] = (counts[p.businessUnit]||0)+1; });
     const max = Math.max(1, ...Object.values(counts));
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([label, value]) => ({ label, value, pct: (value / max) * 100 }));
+    return Object.entries(counts).sort((a,b)=>b[1]-a[1]).map(([label,value]) => ({ label, value, pct: (value/max)*100 }));
   });
 
-  // ── Lifecycle ───────────────────────────────────────
   ngOnInit() { this.load(); }
-
   ngAfterViewInit() { this.loadChartScript(); }
 
   loadChartScript() {
@@ -426,141 +379,91 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c, t, cl] = await Promise.all([
-      this.db.getProjects(), this.db.getUsers(),
-      this.db.getConfig(), this.db.getTasks(),
-      this.db.getChecklist()
+    const [p, u, c, t, cl, tk] = await Promise.all([
+      this.db.getProjects(), this.db.getUsers(), this.db.getConfig(),
+      this.db.getTasks(), this.db.getChecklist(), this.db.getTickets()
     ]);
-    this.projects.set(p);
-    this.users.set(u);
-    this.config.set(c);
-    this.tasks.set(t);
-    this.checklist.set(cl);
+    this.projects.set(p); this.users.set(u); this.config.set(c);
+    this.tasks.set(t); this.checklist.set(cl); this.tickets.set(tk);
     this.loading.set(false);
     setTimeout(() => this.renderCharts(), 100);
   }
 
-  // ── Charts ──────────────────────────────────────────
   renderCharts() {
     const C = (window as any).Chart;
     if (!C) { setTimeout(() => this.renderCharts(), 300); return; }
+    const ink = '#2E2E2E'; const mintL = '#B8D8CE';
+    const legend = this.statoLegend(); const trend = this.monthlyTrend();
 
-    const mint   = '#6EC0AA';
-    const mintD  = '#4a9e8a';
-    const mintL  = '#B8D8CE';
-    const ink    = '#2E2E2E';
-    const blocco = '#E89B8A';
-
-    const projects = this.filtered();
-    const legend = this.statoLegend();
-
-    // Donut
     if (this.donutInstance) this.donutInstance.destroy();
     if (this.donutRef?.nativeElement && legend.length) {
       this.donutInstance = new C(this.donutRef.nativeElement, {
         type: 'doughnut',
-        data: {
-          labels: legend.map(l => l.label),
-          datasets: [{
-            data: legend.map(l => l.value),
-            backgroundColor: legend.map(l => l.color),
-            borderWidth: 0,
-            hoverOffset: 4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          cutout: '70%',
-          plugins: { legend: { display: false }, tooltip: { backgroundColor: ink, padding: 10 } }
-        }
+        data: { labels: legend.map(l=>l.label), datasets: [{ data: legend.map(l=>l.value), backgroundColor: legend.map(l=>l.color), borderWidth:0, hoverOffset:4 }] },
+        options: { responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{ legend:{display:false}, tooltip:{backgroundColor:ink,padding:10} } }
       });
     }
 
-    // Bar avanzamento
-    const top = [...projects].sort((a, b) => b.completamento - a.completamento).slice(0, 6);
-    if (this.barInstance) this.barInstance.destroy();
-    if (this.barRef?.nativeElement) {
-      this.barInstance = new C(this.barRef.nativeElement, {
-        type: 'bar',
+    if (this.lineInstance) this.lineInstance.destroy();
+    if (this.lineRef?.nativeElement) {
+      this.lineInstance = new C(this.lineRef.nativeElement, {
+        type: 'line',
         data: {
-          labels: top.map(p => p.nome.length > 18 ? p.nome.slice(0, 17) + '…' : p.nome),
-          datasets: [{
-            data: top.map(p => p.completamento),
-            backgroundColor: top.map(p => p.completamento >= 70 ? mint : p.completamento >= 40 ? mintL : blocco),
-            borderRadius: 4,
-            borderWidth: 0,
-            barThickness: 16,
-          }]
+          labels: trend.months,
+          datasets: [
+            {
+              label: 'Completati', data: trend.completati,
+              borderColor: ink, backgroundColor: 'rgba(46,46,46,0.07)',
+              borderWidth: 2, pointRadius: 4, pointBackgroundColor: ink,
+              pointBorderColor: '#fff', pointBorderWidth: 2, tension: 0.35, fill: true,
+            },
+            {
+              label: 'Pianificati', data: trend.pianificati,
+              borderColor: '#8aaca4', backgroundColor: 'rgba(184,216,206,0.15)',
+              borderWidth: 2, borderDash: [6, 4], pointRadius: 3,
+              pointBackgroundColor: mintL, pointBorderColor: '#fff',
+              pointBorderWidth: 2, tension: 0.35, fill: true,
+            }
+          ]
         },
         options: {
-          responsive: true, maintainAspectRatio: false, indexAxis: 'y',
-          plugins: { legend: { display: false }, tooltip: { backgroundColor: ink, padding: 10 } },
+          responsive:true, maintainAspectRatio:false,
+          plugins: { legend:{display:false}, tooltip:{ backgroundColor:ink, padding:10, callbacks:{ label:(ctx:any)=>` ${ctx.dataset.label}: ${ctx.parsed.y}` } } },
           scales: {
-            x: {
-              max: 100,
-              grid: { color: 'rgba(46,46,46,0.05)' },
-              ticks: { font: { size: 10, family: 'Geist' }, color: 'rgba(46,46,46,0.5)', callback: (v: any) => v + '%' }
-            },
-            y: {
-              grid: { display: false },
-              ticks: { font: { size: 11, family: 'Geist' }, color: ink }
-            }
+            x: { grid:{color:'rgba(46,46,46,0.05)'}, ticks:{font:{size:10,family:'Geist'},color:'rgba(46,46,46,0.45)'} },
+            y: { beginAtZero:true, grid:{color:'rgba(46,46,46,0.05)'}, ticks:{font:{size:10,family:'Geist'},color:'rgba(46,46,46,0.45)',stepSize:1} }
           }
         }
       });
     }
   }
 
-  // ── Helpers ─────────────────────────────────────────
   getActiveTask(projectId: string): string {
     const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const pt = this.tasks().filter(t => t.projectId === projectId);
     if (!pt.length) return '—';
-    const inProg = pt.find(t => t.stato === 'In corso');
-    if (inProg) return inProg.nome;
-    const daFare = pt.find(t => t.stato === 'Da fare' && SEQUENCE.indexOf(t.nome) >= 0);
-    if (daFare) return daFare.nome;
-    const last = pt.filter(t => t.stato === 'Completato').pop();
-    return last ? last.nome : '—';
+    const inProg = pt.find(t => t.stato === 'In corso'); if (inProg) return inProg.nome;
+    const daFare = pt.find(t => t.stato === 'Da fare' && SEQUENCE.indexOf(t.nome) >= 0); if (daFare) return daFare.nome;
+    const last = pt.filter(t => t.stato === 'Completato').pop(); return last ? last.nome : '—';
   }
-
   getActiveTaskColor(projectId: string): string {
     const pt = this.tasks().filter(t => t.projectId === projectId);
     if (pt.find(t => t.stato === 'In corso')) return '#6EC0AA';
     if (pt.length && pt.every(t => t.stato === 'Completato')) return '#2E2E2E';
     return '#B8D8CE';
   }
-
-  ownerName(ownerId: string): string {
-    return this.users().find(u => u.id === ownerId)?.name || '—';
-  }
-
+  ownerName(ownerId: string): string { return this.users().find(u => u.id === ownerId)?.name || '—'; }
   fmtDate(d: string): string {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit', year:'2-digit' });
   }
-
-  isScaduto(p: Project): boolean {
-    return !!p.dataFine && new Date(p.dataFine) < new Date() && p.stato !== 'Completato';
-  }
-
+  isScaduto(p: Project): boolean { return !!p.dataFine && new Date(p.dataFine) < new Date() && p.stato !== 'Completato'; }
   statoBadge(s: string): string {
-    const m: Record<string,string> = {
-      'In corso':       'status-corso',
-      'Completato':     'status-compl',
-      'Pianificazione': 'status-pianif',
-      'In attesa':      'status-attesa',
-      'On Hold':        'status-attesa',
-      'Annullato':      'bgr',
-    };
+    const m: Record<string,string> = { 'In corso':'status-corso','Completato':'status-compl','Pianificazione':'status-pianif','In attesa':'status-attesa','On Hold':'status-attesa','Annullato':'bgr' };
     return m[s] || 'bgr';
   }
-
   statoColor(s: string): string { return this.statoColors[s] || '#8aaca4'; }
-
   pctClass(n: number): string { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
-
   timeAgo(dateStr: string): string {
     if (!dateStr) return '—';
     const diff = Date.now() - new Date(dateStr).getTime();
@@ -571,6 +474,6 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     const days = Math.floor(hours / 24);
     if (days === 1) return 'Ieri';
     if (days < 7) return `${days} giorni fa`;
-    return new Date(dateStr).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' });
+    return new Date(dateStr).toLocaleDateString('it-IT', { day:'2-digit', month:'2-digit' });
   }
 }
