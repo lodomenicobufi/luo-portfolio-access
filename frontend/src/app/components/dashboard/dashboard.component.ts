@@ -78,7 +78,7 @@ declare var Chart: any;
               <div>
                 <div class="kpi-label">In corso</div>
                 <div class="kpi-value">{{ inCorso() }}</div>
-                <div class="kpi-sub">{{ bloccati() }} bloccato · {{ filtered().filter(p=>p.stato==='Pianificazione').length }} pianificato</div>
+                <div class="kpi-sub">{{ bloccati() }} bloccato · {{ pianificazione() }} pianificato</div>
               </div>
               <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
                 <polygon [attr.points]="sparklineFill(sparkInCorso())" class="spark-fill spark-fill-neutral"/>
@@ -435,6 +435,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   });
   taskAperti   = computed(() => this.tasks().filter(t => t.stato !== 'Completato').length);
   taskInCorso  = computed(() => this.tasks().filter(t => t.stato === 'In corso').length);
+  pianificazione = computed(() => this.filtered().filter(p => p.stato === 'Pianificazione').length);
   ticketAperti  = computed(() => this.tickets().filter(t => t.stato !== 'Chiuso' && t.stato !== 'Risolto').length);
   ticketCritici = computed(() => this.tickets().filter(t => t.priorita === 'Critica' && t.stato !== 'Chiuso').length);
 
