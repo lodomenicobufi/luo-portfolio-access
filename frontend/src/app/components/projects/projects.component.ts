@@ -52,21 +52,23 @@ import { Project, User, AppConfig } from '../../core/models';
             <table class="tbl">
               <thead>
                 <tr>
-                  <th style="padding-left:18px">Nome</th>
-                  <th>Tipo</th>
-                  <th>Priorità</th>
-                  <th>Area</th>
-                  <th>Owner</th>
-                  <th>Stato</th>
-                  <th>Avanzamento</th>
-                  <th>Doc</th>
+                  <th class="tbl-num"></th>
+                  <th>progetto</th>
+                  <th>tipo</th>
+                  <th>priorità</th>
+                  <th>area</th>
+                  <th>owner</th>
+                  <th>stato</th>
+                  <th>avanzamento</th>
+                  <th>doc</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                @for (p of filtered(); track p.id) {
+                @for (p of filtered(); track p.id; let i = $index) {
                   <tr class="cp" [routerLink]="['/projects', p.id]">
-                    <td style="padding-left:18px">
+                    <td class="tbl-num">{{ (i + 1).toString().padStart(2, '0') }}</td>
+                    <td>
                       <strong>{{ p.nome }}</strong>
                       @if (p.descrizione) {
                         <div class="req-desc-preview">{{ p.descrizione | slice:0:70 }}{{ p.descrizione.length > 70 ? '…' : '' }}</div>

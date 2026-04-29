@@ -49,70 +49,60 @@ declare var Chart: any;
         <div class="kpi-grid">
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <div>
-                <div class="kpi-label">Totale progetti</div>
-                <div class="kpi-value">{{ filtered().length }}</div>
-                <div class="kpi-sub">attivi in portfolio</div>
-              </div>
-              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
-                <polygon [attr.points]="sparklineFill(sparkProjects())" class="spark-fill spark-fill-neutral"/>
-                <polyline [attr.points]="sparkline(sparkProjects())" class="spark-line spark-neutral"/>
-              </svg>
+              <div class="kpi-label">Totale progetti</div>
+              <div class="kpi-value">{{ filtered().length }}</div>
+              <div class="kpi-sub">attivi in portfolio</div>
             </div>
+            <svg class="kpi-spark" viewBox="0 0 80 48" preserveAspectRatio="none">
+              <polygon [attr.points]="sparklineFill(sparkProjects())" class="spark-fill spark-fill-neutral"/>
+              <polyline [attr.points]="sparkline(sparkProjects())" class="spark-line spark-neutral"/>
+            </svg>
           </div>
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <div>
-                <div class="kpi-label">Avanzamento medio</div>
-                <div class="kpi-value accent">{{ avgCompl() }}%</div>
-                <div class="kpi-sub kpi-trend positive">+{{ avgComplTrend() }} pt vs mese scorso</div>
-              </div>
-              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
-                <polygon [attr.points]="sparklineFill(sparkAvgCompl())" class="spark-fill spark-fill-green"/>
-                <polyline [attr.points]="sparkline(sparkAvgCompl())" class="spark-line spark-green"/>
-              </svg>
+              <div class="kpi-label">Avanzamento medio</div>
+              <div class="kpi-value accent">{{ avgCompl() }}%</div>
+              <div class="kpi-trend-pill positive">▲ {{ avgComplTrend() }} pt vs mese scorso</div>
             </div>
+            <svg class="kpi-spark" viewBox="0 0 80 48" preserveAspectRatio="none">
+              <polygon [attr.points]="sparklineFill(sparkAvgCompl())" class="spark-fill spark-fill-green"/>
+              <polyline [attr.points]="sparkline(sparkAvgCompl())" class="spark-line spark-green"/>
+            </svg>
           </div>
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <div>
-                <div class="kpi-label">In corso</div>
-                <div class="kpi-value">{{ inCorso() }}</div>
-                <div class="kpi-sub">{{ bloccati() }} bloccato · {{ pianificazione() }} pianificato</div>
-              </div>
-              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
-                <polygon [attr.points]="sparklineFill(sparkInCorso())" class="spark-fill spark-fill-neutral"/>
-                <polyline [attr.points]="sparkline(sparkInCorso())" class="spark-line spark-neutral"/>
-              </svg>
+              <div class="kpi-label">In corso</div>
+              <div class="kpi-value">{{ inCorso() }}</div>
+              <div class="kpi-sub">{{ bloccati() }} bloc. · {{ pianificazione() }} pianif.</div>
             </div>
+            <svg class="kpi-spark" viewBox="0 0 80 48" preserveAspectRatio="none">
+              <polygon [attr.points]="sparklineFill(sparkInCorso())" class="spark-fill spark-fill-neutral"/>
+              <polyline [attr.points]="sparkline(sparkInCorso())" class="spark-line spark-neutral"/>
+            </svg>
           </div>
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <div>
-                <div class="kpi-label">Task aperti</div>
-                <div class="kpi-value">{{ taskAperti() }}</div>
-                <div class="kpi-sub kpi-trend" [class.negative]="sparkTaskDelta() > 0" [class.positive]="sparkTaskDelta() < 0">
-                  {{ sparkTaskDelta() > 0 ? '+' : '' }}{{ sparkTaskDelta() }} vs mese scorso
-                </div>
+              <div class="kpi-label">Task aperti</div>
+              <div class="kpi-value">{{ taskAperti() }}</div>
+              <div class="kpi-trend-pill" [class.negative]="sparkTaskDelta() > 0" [class.positive]="sparkTaskDelta() < 0">
+                {{ sparkTaskDelta() > 0 ? '▼' : '▲' }} {{ sparkTaskDelta() > 0 ? sparkTaskDelta() : -sparkTaskDelta() }} vs mese scorso
               </div>
-              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
-                <polygon [attr.points]="sparklineFill(sparkTasks())" class="spark-fill spark-fill-neutral"/>
-                <polyline [attr.points]="sparkline(sparkTasks())" class="spark-line spark-neutral"/>
-              </svg>
             </div>
+            <svg class="kpi-spark" viewBox="0 0 80 48" preserveAspectRatio="none">
+              <polygon [attr.points]="sparklineFill(sparkTasks())" class="spark-fill spark-fill-neutral"/>
+              <polyline [attr.points]="sparkline(sparkTasks())" class="spark-line spark-neutral"/>
+            </svg>
           </div>
           <div class="kpi-card">
             <div class="kpi-card-top">
-              <div>
-                <div class="kpi-label">Ticket Service Desk</div>
-                <div class="kpi-value">{{ ticketAperti() }}</div>
-                <div class="kpi-sub">{{ ticketCritici() }} critici</div>
-              </div>
-              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
-                <polygon [attr.points]="sparklineFill(sparkTickets())" class="spark-fill spark-fill-red"/>
-                <polyline [attr.points]="sparkline(sparkTickets())" class="spark-line spark-red"/>
-              </svg>
+              <div class="kpi-label">Ticket Service Desk</div>
+              <div class="kpi-value" [class.accent]="ticketCritici() > 0">{{ ticketAperti() }}</div>
+              <div class="kpi-sub">{{ ticketCritici() }} critici</div>
             </div>
+            <svg class="kpi-spark" viewBox="0 0 80 48" preserveAspectRatio="none">
+              <polygon [attr.points]="sparklineFill(sparkTickets())" class="spark-fill spark-fill-red"/>
+              <polyline [attr.points]="sparkline(sparkTickets())" class="spark-line spark-red"/>
+            </svg>
           </div>
         </div>
 
@@ -205,13 +195,15 @@ declare var Chart: any;
               <table class="tbl">
                 <thead>
                   <tr>
-                    <th>Nome</th><th>Priorità</th><th>Area</th><th>Owner</th>
-                    <th>Stato</th><th>Task in corso</th><th>Completamento</th><th>Scadenza</th>
+                    <th class="tbl-num"></th>
+                    <th>nome</th><th>priorità</th><th>area</th><th>owner</th>
+                    <th>stato</th><th>task in corso</th><th>completamento</th><th>scadenza</th>
                   </tr>
                 </thead>
                 <tbody>
-                  @for (p of filtered(); track p.id) {
+                  @for (p of filtered(); track p.id; let i = $index) {
                     <tr class="cp" [routerLink]="['/projects', p.id]">
+                      <td class="tbl-num">{{ (i + 1).toString().padStart(2, '0') }}</td>
                       <td><strong>{{ p.nome }}</strong></td>
                       <td><span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</span></td>
                       <td><span class="badge bgr">{{ p.area }}</span></td>
