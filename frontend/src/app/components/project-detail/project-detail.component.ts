@@ -45,9 +45,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
               <div class="proj-hdr-info">
                 <div class="proj-hdr-nome">{{ project()!.nome }}</div>
-                @if (project()!.descrizione) {
-                  <div class="proj-hdr-desc">{{ project()!.descrizione }}</div>
-                }
                 <div class="proj-hdr-badges">
                   <span class="badge" [class]="statoBadge(project()!.stato)">
                     <span class="badge-dot" [style.background]="statoColor(project()!.stato)"></span>
@@ -206,6 +203,34 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             <div><div class="dl">Documentazione</div>
               <span class="badge" [class]="docBadge(project()!.documentazione)">{{ project()!.documentazione }}</span>
             </div>
+          </div>
+        }
+
+        <!-- Descrizione (collassabile) -->
+        @if (project()!.descrizione) {
+          <div class="card collapsible-card" style="margin-bottom:16px">
+            <div class="collapsible-hdr card-hdr" (click)="descOpen.set(!descOpen())">
+              <div class="collapsible-hdr-left">
+                <svg class="collapse-chevron" [class.open]="descOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+                <div>
+                  <div class="card-eyebrow">Descrizione</div>
+                  <div class="card-title" style="font-size:14px">
+                    @if (!descOpen()) {
+                      {{ project()!.descrizione | slice:0:80 }}{{ project()!.descrizione.length > 80 ? '…' : '' }}
+                    } @else {
+                      Dettagli progetto
+                    }
+                  </div>
+                </div>
+              </div>
+            </div>
+            @if (descOpen()) {
+              <div class="desc-body">
+                {{ project()!.descrizione }}
+              </div>
+            }
           </div>
         }
 
@@ -548,6 +573,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   config = signal<AppConfig | null>(null);
   activeTab = signal('task');
   tabsOpen  = signal(false);
+  descOpen  = signal(false);
   editMode  = signal(false);
   toast = signal('');
   editForm: Partial<Project> = {};

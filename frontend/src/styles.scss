@@ -1176,6 +1176,14 @@ select.fi {
 .subtask-header:hover { background:var(--bg-soft); }
 .subtask-body { padding:12px; border-top:0.5px solid rgba(46,46,46,0.06); background:var(--bg-soft); }
 
+.desc-body {
+  padding: 4px 24px 20px;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: rgba(46,46,46,0.75);
+  white-space: pre-wrap;
+}
+
 /* ── BU projects panel ── */
 .bu-proj-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap:0; }
 .bu-proj-list { display:flex; flex-direction:column; }
