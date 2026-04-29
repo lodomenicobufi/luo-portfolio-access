@@ -206,8 +206,9 @@ import { Project, User, AppConfig } from '../../core/models';
   `,
 })
 export class ProjectsComponent implements OnInit {
-  db = inject(GithubDataService);
-  auth = inject(AuthService);
+  db    = inject(GithubDataService);
+  auth  = inject(AuthService);
+  route = inject(ActivatedRoute);
 
   loading = signal(true);
   saving = signal(false);
@@ -242,10 +243,9 @@ export class ProjectsComponent implements OnInit {
   }
 
   ngOnInit() {
-    // Legge filtri pre-impostati da queryParams (es. dalla dashboard)
-    const params = inject(ActivatedRoute).snapshot.queryParams;
+    const params = this.route.snapshot.queryParams;
     if (params['stato']) this.fStato = params['stato'];
-    if (params['prio'])  this.fPrio = params['prio'];
+    if (params['prio'])  this.fPrio  = params['prio'];
     this.load();
   }
 
