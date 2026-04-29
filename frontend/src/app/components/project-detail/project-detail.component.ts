@@ -23,20 +23,73 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         <div class="loading-full"><span class="spinner"></span><span>Caricamento...</span></div>
       } @else if (project()) {
 
-        <div class="page-hdr" style="display:flex;align-items:flex-start;justify-content:space-between">
-          <div>
-            <a routerLink="/projects" class="btn btn-s btn-sm" style="text-decoration:none;margin-bottom:8px;display:inline-flex">&#8592; Progetti</a>
-            <div class="page-title" style="margin-top:4px">{{ project()!.nome }}</div>
-            <div style="display:flex;gap:8px;margin-top:6px">
-              <span class="badge" [class]="statoBadge(project()!.stato)">{{ project()!.stato }}</span>
-              <span class="badge" [class]="prioBadge(project()!.priorita)">{{ project()!.priorita }}</span>
-              <span class="badge bp">{{ project()!.tipologia }}</span>
+        <!-- HEADER PROGETTO -->
+        <div class="proj-hdr-card">
+          <div class="proj-hdr-top">
+            <a routerLink="/projects" class="btn btn-s btn-sm proj-back-btn" style="text-decoration:none">&#8592; Progetti</a>
+            @if (auth.isEditor) {
+              <button class="btn btn-s btn-sm" (click)="editMode.set(!editMode())">
+                {{ editMode() ? 'Annulla' : 'Modifica' }}
+              </button>
+            }
+          </div>
+
+          <div class="proj-hdr-body">
+            <div class="proj-hdr-left">
+              <!-- Icona progetto -->
+              <div class="proj-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" width="28" height="28">
+                  <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                </svg>
+              </div>
+
+              <div class="proj-hdr-info">
+                <div class="proj-hdr-nome">{{ project()!.nome }}</div>
+                @if (project()!.descrizione) {
+                  <div class="proj-hdr-desc">{{ project()!.descrizione }}</div>
+                }
+                <div class="proj-hdr-badges">
+                  <span class="badge" [class]="statoBadge(project()!.stato)">
+                    <span class="badge-dot" [style.background]="statoColor(project()!.stato)"></span>
+                    {{ project()!.stato }}
+                  </span>
+                  <span class="badge" [class]="prioBadge(project()!.priorita)">{{ project()!.priorita }}</span>
+                  <span class="badge bp">{{ project()!.tipologia }}</span>
+                  @if (project()!.area) {
+                    <span class="badge bgr">{{ project()!.area }}</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <!-- KPI lato destro -->
+            <div class="proj-hdr-kpis">
+              <div class="proj-hdr-kpi">
+                <div class="proj-hdr-kpi-val accent">{{ project()!.completamento }}%</div>
+                <div class="proj-hdr-kpi-lbl">Completamento</div>
+                <div class="pbar proj-hdr-pbar" style="margin-top:6px">
+                  <div class="pfill" [class]="pctClass(project()!.completamento)" [style.width.%]="project()!.completamento"></div>
+                </div>
+              </div>
+              <div class="proj-hdr-kpi-div"></div>
+              <div class="proj-hdr-kpi">
+                <div class="proj-hdr-kpi-val">{{ doneTaskCount() }}/{{ tasks().length }}</div>
+                <div class="proj-hdr-kpi-lbl">Task completati</div>
+              </div>
+              <div class="proj-hdr-kpi-div"></div>
+              <div class="proj-hdr-kpi">
+                <div class="proj-hdr-kpi-val" [class.text-danger]="isScadutoProj()">{{ fmtDate(project()!.dataFine) }}</div>
+                <div class="proj-hdr-kpi-lbl">Scadenza</div>
+              </div>
+              <div class="proj-hdr-kpi-div"></div>
+              <div class="proj-hdr-kpi">
+                <div class="proj-hdr-kpi-val">{{ ownerInitials() }}</div>
+                <div class="proj-hdr-kpi-lbl">{{ ownerName(project()!.owner) }}</div>
+              </div>
             </div>
           </div>
-          @if (auth.isEditor) {
-            <button class="btn btn-s btn-sm" (click)="editMode.set(!editMode())">\n              {{ editMode() ? 'Annulla' : 'Modifica' }}\n            </button>
-          }
         </div>
+
 
         <!-- RIGA 1: anagrafica (metà) + pannello BU (metà) -->
         <!-- RIGA 1: Progetti stessa BU (full width) -->
@@ -469,6 +522,27 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   });
 
   pctClass(n: number) { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
+
+  doneTaskCount  = computed(() => this.tasks().filter(t => t.stato === 'Completato').length);
+  isScadutoProj  = computed(() => {
+    const p = this.project();
+    return p?.dataFine ? new Date(p.dataFine) < new Date() && p.stato !== 'Completato' : false;
+  });
+  ownerInitials  = computed(() => {
+    const name = this.ownerName(this.project()?.owner || '');
+    const parts = name.trim().split(' ');
+    return parts.length >= 2
+      ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+      : name.slice(0, 2).toUpperCase();
+  });
+
+  statoColor(s: string): string {
+    const m: Record<string,string> = {
+      'In corso':'#6EC0AA','Completato':'#2E2E2E','Pianificazione':'#B8D8CE',
+      'In attesa':'#E89B8A','On Hold':'#E89B8A','Annullato':'#8aaca4'
+    };
+    return m[s] || '#8aaca4';
+  }
 
   // ── Gantt ─────────────────────────────────────────────
   ganttStart = computed(() => {
