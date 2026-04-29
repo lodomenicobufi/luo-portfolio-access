@@ -397,54 +397,77 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         @if (activeTab() === 'checklist') {
           <div class="card tab-card" style="padding:0;overflow:hidden">
-            <table class="chk-table">
-              <thead>
-                <tr>
-                  <th style="width:46%">Documento</th>
-                  <th>Link documento</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (doc of config()?.docFields||[]; track doc) {
-                  <tr [class.chk-done]="getChecklistEntry(doc)?.completato">
-                    <td>
-                      <div style="display:flex;align-items:center;gap:10px">
-                        <input type="checkbox"
-                          [checked]="getChecklistEntry(doc)?.completato"
-                          (change)="toggleChecklist(doc, getChecklistEntry(doc))"
-                          [disabled]="!auth.isEditor"
-                          style="width:15px;height:15px;accent-color:var(--teal);flex-shrink:0;cursor:pointer"/>
-                        <span [class.chk-label-done]="getChecklistEntry(doc)?.completato"
-                          style="font-size:13px">{{ doc }}</span>
-                      </div>
-                    </td>
-                    <td>
+            <div class="chk-list">
+              @for (doc of config()?.docFields||[]; track doc) {
+                <div class="chk-row" [class.chk-row-done]="getChecklistEntry(doc)?.completato">
+                  <div class="chk-row-left">
+                    <input type="checkbox"
+                      [checked]="getChecklistEntry(doc)?.completato"
+                      (change)="toggleChecklist(doc, getChecklistEntry(doc))"
+                      [disabled]="!auth.isEditor"
+                      class="chk-box" />
+                    <span class="chk-row-label" [class.chk-label-done]="getChecklistEntry(doc)?.completato">
+                      {{ doc }}
+                    </span>
+                  </div>
+
+                  <div class="chk-row-right">
+                    @if (getChecklistEntry(doc)?.linkUrl) {
+                      <!-- Link già presente: bottone compatto verde -->
+                      <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank" class="btn-doc-view">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        Documento
+                      </a>
                       @if (auth.isEditor) {
-                        <div style="display:flex;gap:6px;align-items:center">
-                          <input class="fi" style="font-size:12px;padding:5px 8px"
-                            placeholder="Incolla link..."
-                            [(ngModel)]="checklistLinks[doc]"
-                            (blur)="saveChecklistLink(doc, getChecklistEntry(doc))"/>
-                          @if (getChecklistEntry(doc)?.linkUrl) {
-                            <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank"
-                              class="btn btn-g btn-sm">Apri</a>
-                          }
-                        </div>
-                      } @else {
-                        @if (getChecklistEntry(doc)?.linkUrl) {
-                          <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank"
-                            class="btn btn-g btn-sm">Apri documento</a>
-                        } @else {
-                          <span style="font-size:12px;color:var(--gray-400)">—</span>
-                        }
+                        <button class="btn-doc-edit" (click)="openLinkEdit(doc)" title="Modifica link">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
                       }
-                    </td>
-                  </tr>
+                    } @else if (auth.isEditor) {
+                      <!-- Nessun link: pulsante inserisci -->
+                      <button class="btn-doc-insert" (click)="openLinkEdit(doc)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        Inserisci link
+                      </button>
+                    } @else {
+                      <span class="chk-no-doc">—</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="chk-footer">
+              <div class="chk-footer-bar">
+                <div class="chk-footer-fill" [style.width.%]="(completatiCount() / (config()?.docFields?.length||1)) * 100"></div>
+              </div>
+              <span>{{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti completati</span>
+            </div>
+          </div>
+        }
+
+        <!-- MODAL INSERISCI LINK DOCUMENTO -->
+        @if (linkEditDoc()) {
+          <div class="mb" (click)="$event.target === $event.currentTarget && closeLinkEdit()">
+            <div class="modal" style="max-width:480px">
+              <div class="mh">
+                <span class="mt">Link documento</span>
+                <button class="ico-btn" (click)="closeLinkEdit()">✕</button>
+              </div>
+              <div class="mbody">
+                <div class="fg">
+                  <label class="fl">{{ linkEditDoc() }}</label>
+                  <input class="fi" type="url" [(ngModel)]="linkEditValue"
+                    placeholder="https://..." (keydown.enter)="saveLinkEdit()" />
+                  <div style="font-size:11px;color:rgba(46,46,46,0.45);margin-top:4px">Incolla l'URL del documento (SharePoint, Drive, ecc.)</div>
+                </div>
+              </div>
+              <div class="mfoot">
+                @if (getChecklistEntry(linkEditDoc()!)?.linkUrl) {
+                  <button class="btn btn-danger" style="margin-right:auto" (click)="deleteLinkEdit()">Rimuovi link</button>
                 }
-              </tbody>
-            </table>
-            <div style="padding:12px 16px;font-size:12px;color:var(--gray-400);border-top:1px solid var(--gray-100)">
-              {{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti completati
+                <button class="btn btn-g" (click)="closeLinkEdit()">Annulla</button>
+                <button class="btn btn-p" (click)="saveLinkEdit()">Salva link</button>
+              </div>
             </div>
           </div>
         }
@@ -529,6 +552,43 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toast = signal('');
   editForm: Partial<Project> = {};
   checklistLinks: Record<string, string> = {};
+  linkEditDoc   = signal<string | null>(null);
+  linkEditValue = '';
+
+  openLinkEdit(doc: string) {
+    this.linkEditValue = this.getChecklistEntry(doc)?.linkUrl || '';
+    this.linkEditDoc.set(doc);
+  }
+  closeLinkEdit() { this.linkEditDoc.set(null); }
+
+  async saveLinkEdit() {
+    const doc = this.linkEditDoc();
+    if (!doc) return;
+    const entry = this.getChecklistEntry(doc);
+    const projectId = this.project()!.id;
+    await this.db.upsertChecklistItem({
+      id: entry?.id, documento: doc,
+      completato: entry?.completato || false,
+      linkUrl: this.linkEditValue.trim(),
+      projectId
+    });
+    this.checklist.set(await this.db.getChecklist(projectId));
+    this.linkEditDoc.set(null);
+  }
+
+  async deleteLinkEdit() {
+    const doc = this.linkEditDoc();
+    if (!doc) return;
+    const entry = this.getChecklistEntry(doc);
+    const projectId = this.project()!.id;
+    await this.db.upsertChecklistItem({
+      id: entry?.id, documento: doc,
+      completato: entry?.completato || false,
+      linkUrl: '', projectId
+    });
+    this.checklist.set(await this.db.getChecklist(projectId));
+    this.linkEditDoc.set(null);
+  }
   expandedTaskId = signal<string>('');
   expandedSubTaskId = signal<string>('');
   newSubTaskMap: Record<string, Record<string, string>> = {};
