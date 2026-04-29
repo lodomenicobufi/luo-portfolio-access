@@ -53,11 +53,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     <span class="badge-dot" [style.background]="statoColor(project()!.stato)"></span>
                     {{ project()!.stato }}
                   </span>
-                  <span class="badge" [class]="prioBadge(project()!.priorita)">{{ project()!.priorita }}</span>
-                  <span class="badge bp">{{ project()!.tipologia }}</span>
-                  @if (project()!.area) {
-                    <span class="badge bgr">{{ project()!.area }}</span>
-                  }
                 </div>
               </div>
             </div>
@@ -124,6 +119,8 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         @if (editMode()) {
           <div class="card" style="margin-bottom:16px">
             <div class="sec-div">Modifica Progetto</div>
+
+            <!-- Campi base: tutti gli editor -->
             <div class="fr2">
               <div class="fg"><label class="fl req">Nome</label><input class="fi" [(ngModel)]="editForm.nome"/></div>
               <div class="fg"><label class="fl">Stato</label>
@@ -136,7 +133,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             <div class="fr3">
               <div class="fg"><label class="fl">Data Inizio</label><input class="fi" type="date" [(ngModel)]="editForm.dataInizio"/></div>
               <div class="fg"><label class="fl">Data Fine</label><input class="fi" type="date" [(ngModel)]="editForm.dataFine"/></div>
-              <div class="fg"><label class="fl">Priorita</label>
+              <div class="fg"><label class="fl">Priorità</label>
                 <select class="fi" [(ngModel)]="editForm.priorita">
                   @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
                 </select></div>
@@ -145,13 +142,54 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               <select class="fi" [(ngModel)]="editForm.documentazione">
                 <option>parziale</option><option>totale</option><option>non necessaria</option>
               </select></div>
-            <button class="btn btn-p btn-sm" style="margin-top:8px" (click)="saveProject()" [disabled]="saving()">
-              {{ saving() ? 'Salvataggio...' : 'Salva' }}
+
+            <!-- Campi riservati admin -->
+            @if (auth.isAdmin) {
+              <div class="admin-section">
+                <div class="admin-section-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Solo Admin
+                </div>
+                <div class="fr2">
+                  <div class="fg"><label class="fl">Tipologia</label>
+                    <select class="fi" [(ngModel)]="editForm.tipologia">
+                      @for (v of config()?.tipologie||[]; track v){ <option>{{v}}</option> }
+                    </select></div>
+                  <div class="fg"><label class="fl">Owner</label>
+                    <select class="fi" [(ngModel)]="editForm.owner">
+                      @for (u of users(); track u.id){ <option [value]="u.id">{{ u.name }}</option> }
+                    </select></div>
+                </div>
+                <div class="fr2">
+                  <div class="fg"><label class="fl">Area</label>
+                    <select class="fi" [(ngModel)]="editForm.area">
+                      @for (v of config()?.aree||[]; track v){ <option>{{v}}</option> }
+                    </select></div>
+                  <div class="fg"><label class="fl">Fornitore</label>
+                    <select class="fi" [(ngModel)]="editForm.fornitore">
+                      @for (v of config()?.fornitori||[]; track v){ <option>{{v}}</option> }
+                    </select></div>
+                </div>
+              </div>
+            }
+
+            <button class="btn btn-p btn-sm" style="margin-top:12px" (click)="saveProject()" [disabled]="saving()">
+              {{ saving() ? 'Salvataggio...' : 'Salva modifiche' }}
             </button>
           </div>
         }
         @if (!editMode()) {
           <div class="card detail-grid" style="margin-bottom:16px">
+            <div><div class="dl">Stato</div>
+              <span class="badge" [class]="statoBadge(project()!.stato)">
+                <span class="badge-dot" [style.background]="statoColor(project()!.stato)"></span>
+                {{ project()!.stato }}
+              </span>
+            </div>
+            <div><div class="dl">Priorità</div>
+              <span class="badge" [class]="prioBadge(project()!.priorita)">{{ project()!.priorita }}</span>
+            </div>
+            <div><div class="dl">Tipologia</div><div class="dv">{{ project()!.tipologia }}</div></div>
             <div><div class="dl">Area</div><div class="dv">{{ project()!.area }}</div></div>
             <div><div class="dl">Business Unit</div><div class="dv">{{ project()!.businessUnit }}</div></div>
             <div><div class="dl">Fornitore</div><div class="dv">{{ project()!.fornitore }}</div></div>
