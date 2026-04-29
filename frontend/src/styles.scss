@@ -537,6 +537,11 @@ button, input, select, textarea { font-family: inherit; }
 }
 .donut-legend-lbl { flex: 1; color: rgba(46,46,46,0.7); }
 .donut-legend-val { font-weight: 600; color: var(--ink); }
+.donut-legend-item--click {
+  cursor: pointer; border-radius: 6px; padding: 2px 4px; margin: -2px -4px;
+  transition: background .12s;
+  &:hover { background: rgba(110,192,170,0.1); }
+}
 
 .bu-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .bu-row { }

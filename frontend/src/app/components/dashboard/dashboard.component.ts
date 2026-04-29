@@ -110,7 +110,8 @@ declare var Chart: any;
             </div>
             <div class="donut-legend">
               @for (s of statoLegend(); track s.label) {
-                <div class="donut-legend-item">
+                <div class="donut-legend-item donut-legend-item--click"
+                  (click)="goTo('/projects?stato=' + s.label)" title="Filtra per {{ s.label }}">
                   <span class="donut-legend-dot" [style.background]="s.color"></span>
                   <span class="donut-legend-lbl">{{ s.label }}</span>
                   <span class="donut-legend-val">{{ s.value }}</span>
@@ -330,7 +331,16 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private auth   = inject(AuthService);
   private router = inject(Router);
 
-  goTo(path: string) { this.router.navigate([path]); }
+  goTo(path: string) {
+    const [url, qs] = path.split('?');
+    if (qs) {
+      const params: Record<string,string> = {};
+      qs.split('&').forEach(p => { const [k,v] = p.split('='); params[k] = decodeURIComponent(v); });
+      this.router.navigate([url], { queryParams: params });
+    } else {
+      this.router.navigate([url]);
+    }
+  }
 
   loading   = signal(true);
   projects  = signal<Project[]>([]);
@@ -501,13 +511,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     if (this.donutRef?.nativeElement && legend.length) {
       this.donutInstance = new C(this.donutRef.nativeElement, {
         type: 'doughnut',
-        data: { labels: legend.map(l=>l.label), datasets: [{ data: legend.map(l=>l.value), backgroundColor: legend.map(l=>l.color), borderWidth:0, hoverOffset:4 }] },
-        options: { responsive:true, maintainAspectRatio:false, cutout:'72%', plugins:{ legend:{display:false}, tooltip:{backgroundColor:ink,padding:10} } }
+        data: { labels: legend.map(l=>l.label), datasets: [{ data: legend.map(l=>l.value), backgroundColor: legend.map(l=>l.color), borderWidth:0, hoverOffset:6 }] },
+        options: {
+          responsive:true, maintainAspectRatio:false, cutout:'72%',
+          cursor: 'pointer',
+          plugins:{ legend:{display:false}, tooltip:{backgroundColor:ink,padding:10} },
+          onClick: (_: any, elements: any[]) => {
+            if (!elements.length) return;
+            const idx = elements[0].index;
+            const stato = legend[idx]?.label;
+            if (stato) this.router.navigate(['/projects'], { queryParams: { stato } });
+          }
+        }
       });
+      this.donutRef.nativeElement.style.cursor = 'pointer';
     }
 
     if (this.lineInstance) this.lineInstance.destroy();
     if (this.lineRef?.nativeElement) {
+      const monthlyData = trend;
       this.lineInstance = new C(this.lineRef.nativeElement, {
         type: 'line',
         data: {
@@ -530,10 +552,25 @@ export class DashboardComponent implements OnInit, AfterViewInit {
         },
         options: {
           responsive:true, maintainAspectRatio:false,
-          plugins: { legend:{display:false}, tooltip:{ backgroundColor:ink, padding:10, callbacks:{ label:(ctx:any)=>` ${ctx.dataset.label}: ${ctx.parsed.y}` } } },
+          plugins: {
+            legend:{display:false},
+            tooltip:{ backgroundColor:ink, padding:10, callbacks:{ label:(ctx:any)=>` ${ctx.dataset.label}: ${ctx.parsed.y}` } }
+          },
           scales: {
             x: { grid:{color:'rgba(46,46,46,0.05)'}, ticks:{font:{size:10,family:'Geist'},color:'rgba(46,46,46,0.45)'} },
             y: { beginAtZero:true, grid:{color:'rgba(46,46,46,0.05)'}, ticks:{font:{size:10,family:'Geist'},color:'rgba(46,46,46,0.45)',stepSize:1} }
+          },
+          onClick: (_: any, elements: any[]) => {
+            if (!elements.length) return;
+            const pointIdx = elements[0].index;
+            const datasetIdx = elements[0].datasetIndex;
+            const mese = monthlyData.months[pointIdx];
+            const tipo = datasetIdx === 0 ? 'Completato' : 'Pianificazione';
+            if (mese) this.router.navigate(['/projects'], { queryParams: { stato: tipo } });
+          },
+          onHover: (_: any, elements: any[]) => {
+            if (this.lineRef?.nativeElement)
+              this.lineRef.nativeElement.style.cursor = elements.length ? 'pointer' : 'default';
           }
         }
       });

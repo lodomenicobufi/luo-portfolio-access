@@ -1,7 +1,7 @@
 // src/app/components/projects/projects.component.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -241,7 +241,14 @@ export class ProjectsComponent implements OnInit {
     );
   }
 
-  ngOnInit() { this.load(); }
+  ngOnInit() {
+    // Legge filtri pre-impostati da queryParams (es. dalla dashboard)
+    const params = inject(ActivatedRoute).snapshot.queryParams;
+    if (params['stato']) this.fStato = params['stato'];
+    if (params['bu'])    this.fBU   = params['bu'];
+    if (params['prio'])  this.fPrio = params['prio'];
+    this.load();
+  }
 
   async load() {
     this.loading.set(true);
