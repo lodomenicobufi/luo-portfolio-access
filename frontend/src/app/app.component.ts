@@ -16,6 +16,7 @@ import { AuthService } from './core/services/auth.service';
           <div class="sidebar-logo">
             <img src="assets/logo-luo.jpeg" alt="LUO People and Tech" class="sidebar-logo-img"
               (error)="onLogoError($event)" />
+            <div class="sidebar-portfolio-label">Portfolio Management</div>
           </div>
 
           <a routerLink="/dashboard" routerLinkActive="active" class="side-nav-item">
@@ -82,7 +83,6 @@ import { AuthService } from './core/services/auth.service';
         <div class="main">
           <header class="topbar">
             <div class="topbar-title">
-              <div class="topbar-eyebrow">Portfolio management</div>
               <div class="topbar-h1">{{ pageTitle() }}</div>
             </div>
             <div class="topbar-actions">
