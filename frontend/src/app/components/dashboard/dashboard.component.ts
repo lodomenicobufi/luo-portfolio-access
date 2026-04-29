@@ -48,29 +48,71 @@ declare var Chart: any;
         <!-- KPI ROW -->
         <div class="kpi-grid">
           <div class="kpi-card">
-            <div class="kpi-label">Totale progetti</div>
-            <div class="kpi-value">{{ filtered().length }}</div>
-            <div class="kpi-sub">attivi in portfolio</div>
+            <div class="kpi-card-top">
+              <div>
+                <div class="kpi-label">Totale progetti</div>
+                <div class="kpi-value">{{ filtered().length }}</div>
+                <div class="kpi-sub">attivi in portfolio</div>
+              </div>
+              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
+                <polygon [attr.points]="sparklineFill(sparkProjects())" class="spark-fill spark-fill-neutral"/>
+                <polyline [attr.points]="sparkline(sparkProjects())" class="spark-line spark-neutral"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Avanzamento medio</div>
-            <div class="kpi-value accent">{{ avgCompl() }}%</div>
-            <div class="kpi-sub kpi-trend positive">+{{ avgComplTrend() }} pt vs mese scorso</div>
+            <div class="kpi-card-top">
+              <div>
+                <div class="kpi-label">Avanzamento medio</div>
+                <div class="kpi-value accent">{{ avgCompl() }}%</div>
+                <div class="kpi-sub kpi-trend positive">+{{ avgComplTrend() }} pt vs mese scorso</div>
+              </div>
+              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
+                <polygon [attr.points]="sparklineFill(sparkAvgCompl())" class="spark-fill spark-fill-green"/>
+                <polyline [attr.points]="sparkline(sparkAvgCompl())" class="spark-line spark-green"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">In corso</div>
-            <div class="kpi-value">{{ inCorso() }}</div>
-            <div class="kpi-sub">{{ bloccati() }} bloccato</div>
+            <div class="kpi-card-top">
+              <div>
+                <div class="kpi-label">In corso</div>
+                <div class="kpi-value">{{ inCorso() }}</div>
+                <div class="kpi-sub">{{ bloccati() }} bloccato · {{ filtered().filter(p=>p.stato==='Pianificazione').length }} pianificato</div>
+              </div>
+              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
+                <polygon [attr.points]="sparklineFill(sparkInCorso())" class="spark-fill spark-fill-neutral"/>
+                <polyline [attr.points]="sparkline(sparkInCorso())" class="spark-line spark-neutral"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Task aperti</div>
-            <div class="kpi-value">{{ taskAperti() }}</div>
-            <div class="kpi-sub">{{ taskInCorso() }} in corso</div>
+            <div class="kpi-card-top">
+              <div>
+                <div class="kpi-label">Task aperti</div>
+                <div class="kpi-value">{{ taskAperti() }}</div>
+                <div class="kpi-sub kpi-trend" [class.negative]="sparkTaskDelta() > 0" [class.positive]="sparkTaskDelta() < 0">
+                  {{ sparkTaskDelta() > 0 ? '+' : '' }}{{ sparkTaskDelta() }} vs mese scorso
+                </div>
+              </div>
+              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
+                <polygon [attr.points]="sparklineFill(sparkTasks())" class="spark-fill spark-fill-neutral"/>
+                <polyline [attr.points]="sparkline(sparkTasks())" class="spark-line spark-neutral"/>
+              </svg>
+            </div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">Ticket Service Desk</div>
-            <div class="kpi-value">{{ ticketAperti() }}</div>
-            <div class="kpi-sub">{{ ticketCritici() }} critici</div>
+            <div class="kpi-card-top">
+              <div>
+                <div class="kpi-label">Ticket Service Desk</div>
+                <div class="kpi-value">{{ ticketAperti() }}</div>
+                <div class="kpi-sub">{{ ticketCritici() }} critici</div>
+              </div>
+              <svg class="kpi-spark" viewBox="0 0 80 32" preserveAspectRatio="none">
+                <polygon [attr.points]="sparklineFill(sparkTickets())" class="spark-fill spark-fill-red"/>
+                <polyline [attr.points]="sparkline(sparkTickets())" class="spark-line spark-red"/>
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -395,6 +437,95 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   taskInCorso  = computed(() => this.tasks().filter(t => t.stato === 'In corso').length);
   ticketAperti  = computed(() => this.tickets().filter(t => t.stato !== 'Chiuso' && t.stato !== 'Risolto').length);
   ticketCritici = computed(() => this.tickets().filter(t => t.priorita === 'Critica' && t.stato !== 'Chiuso').length);
+
+  // ── Sparkline data (ultimi 7 mesi) ────────────────────
+  private sparkMonths = computed(() => {
+    const now = new Date();
+    return Array.from({length: 7}, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - (6 - i), 1);
+      return { year: d.getFullYear(), month: d.getMonth() };
+    });
+  });
+
+  sparkProjects = computed(() => this.sparkMonths().map(({year, month}) => {
+    const end = new Date(year, month + 1, 0);
+    return this.projects().filter(p => {
+      if (!p.dataInizio) return false;
+      const start = new Date(p.dataInizio);
+      return start <= end && (!p.dataFine || new Date(p.dataFine) >= new Date(year, month, 1));
+    }).length;
+  }));
+
+  sparkAvgCompl = computed(() => this.sparkMonths().map(({year, month}) => {
+    const end = new Date(year, month + 1, 0);
+    const active = this.projects().filter(p => {
+      if (!p.dataInizio) return false;
+      return new Date(p.dataInizio) <= end;
+    });
+    return active.length ? Math.round(active.reduce((s, p) => s + p.completamento, 0) / active.length) : 0;
+  }));
+
+  sparkInCorso = computed(() => this.sparkMonths().map(({year, month}) => {
+    const d = new Date(year, month, 15);
+    return this.projects().filter(p => {
+      if (!p.dataInizio) return false;
+      const start = new Date(p.dataInizio);
+      const end = p.dataFine ? new Date(p.dataFine) : new Date(9999,0,1);
+      return start <= d && end >= d && p.stato === 'In corso';
+    }).length;
+  }));
+
+  sparkTasks = computed(() => this.sparkMonths().map(({year, month}) => {
+    const d = new Date(year, month + 1, 0);
+    return this.tasks().filter(t => {
+      if (!t.dataInizio) return false;
+      return new Date(t.dataInizio) <= d && t.stato !== 'Completato';
+    }).length;
+  }));
+
+  sparkTickets = computed(() => this.sparkMonths().map(({year, month}) => {
+    const d = new Date(year, month + 1, 0);
+    return this.tickets().filter(t => {
+      if (!t.dataApertura) return false;
+      const open = new Date(t.dataApertura) <= d;
+      const closed = t.dataChiusura ? new Date(t.dataChiusura) <= d : false;
+      return open && !closed;
+    }).length;
+  }));
+
+  sparkTaskDelta = computed(() => {
+    const d = this.sparkTasks();
+    return d.length >= 2 ? d[d.length-1] - d[d.length-2] : 0;
+  });
+
+  // Converte array di numeri in punti SVG per polyline (80x32 viewBox)
+  sparkline(data: number[]): string {
+    if (!data.length) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const w = 80; const h = 28; const pad = 2;
+    return data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - min) / range) * h + pad;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).join(' ');
+  }
+
+  // Percorso chiuso per il fill area della sparkline
+  sparklineFill(data: number[]): string {
+    if (!data.length) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const w = 80; const h = 28; const pad = 2;
+    const pts = data.map((v, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((v - min) / range) * h + pad;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    });
+    return `${pts.join(' ')} ${w},${h+pad} 0,${h+pad}`;
+  }
 
   monthlyTrend = computed(() => {
     const now = new Date();

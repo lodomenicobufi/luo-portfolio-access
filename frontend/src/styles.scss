@@ -461,6 +461,42 @@ button, input, select, textarea { font-family: inherit; }
   margin-top: 2px;
 }
 
+/* KPI card layout with sparkline */
+.kpi-card-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+}
+.kpi-spark {
+  width: 80px;
+  height: 36px;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+/* Sparkline lines */
+.spark-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+.spark-fill {
+  stroke: none;
+  opacity: 0.12;
+}
+/* neutral (gray) */
+.spark-neutral { stroke: rgba(46,46,46,0.4); }
+.spark-fill-neutral { fill: rgba(46,46,46,0.4); }
+/* green (mint) */
+.spark-green { stroke: #6EC0AA; }
+.spark-fill-green { fill: #6EC0AA; }
+/* red */
+.spark-red { stroke: #E89B8A; }
+.spark-fill-red { fill: #E89B8A; }
+
 /* ── CHARTS ROW ────────────────────────────────────── */
 .charts-grid {
   display: grid;
