@@ -120,7 +120,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── SIDEBAR ───────────────────────────────────────── */
 .sidebar {
-  background: #363636;
+  background: #6EC0AA;
   border-right: none;
   padding: 22px 14px;
   display: flex;
@@ -152,7 +152,7 @@ button, input, select, textarea { font-family: inherit; }
   font-weight: 700;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.3);
+  color: rgba(255,255,255,0.55);
   text-align: center;
 }
 .luo-wordmark-fb {
@@ -192,7 +192,7 @@ button, input, select, textarea { font-family: inherit; }
   padding: 9px 12px;
   border-radius: var(--r-sm);
   font-size: 13px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.75);
   background: transparent;
   cursor: pointer;
   font-weight: 400;
@@ -201,10 +201,10 @@ button, input, select, textarea { font-family: inherit; }
   border: none;
   transition: background .15s, color .15s;
 }
-.side-nav-item:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.85); }
+.side-nav-item:hover { background: rgba(255,255,255,0.15); color: #fff; }
 .side-nav-item.active {
   color: #fff;
-  background: rgba(110,192,170,0.2);
+  background: rgba(255,255,255,0.22);
   font-weight: 600;
 }
 .side-nav-item.active::before {
@@ -214,19 +214,19 @@ button, input, select, textarea { font-family: inherit; }
   top: 8px;
   bottom: 8px;
   width: 3px;
-  background: var(--mint);
+  background: #fff;
   border-radius: 99px;
 }
-.side-nav-item .nav-ico { width: 16px; height: 16px; flex-shrink: 0; opacity: .45; }
-.side-nav-item:hover .nav-ico { opacity: .7; }
-.side-nav-item.active .nav-ico { opacity: 1; color: var(--mint); }
+.side-nav-item .nav-ico { width: 16px; height: 16px; flex-shrink: 0; opacity: .6; }
+.side-nav-item:hover .nav-ico { opacity: .85; }
+.side-nav-item.active .nav-ico { opacity: 1; }
 .side-nav-item .nav-lbl { flex: 1; }
 .side-nav-item .nav-count {
   font-size: 11px;
   padding: 1px 7px;
   border-radius: 99px;
-  background: rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.45);
+  background: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8);
   font-weight: 500;
 }
 
@@ -235,13 +235,13 @@ button, input, select, textarea { font-family: inherit; }
 .sidebar-info {
   margin-top: 12px;
   padding: 14px;
-  background: rgba(110,192,170,0.12);
+  background: rgba(255,255,255,0.18);
   border-radius: var(--r-lg);
   font-size: 12px;
-  border: 1px solid rgba(110,192,170,0.2);
+  border: 1px solid rgba(255,255,255,0.25);
 }
-.sidebar-info-title { font-weight: 600; margin-bottom: 4px; color: rgba(255,255,255,0.85); }
-.sidebar-info-body { color: rgba(255,255,255,0.45); line-height: 1.4; }
+.sidebar-info-title { font-weight: 600; margin-bottom: 4px; color: #fff; }
+.sidebar-info-body { color: rgba(255,255,255,0.7); line-height: 1.4; }
 
 /* ── MAIN ──────────────────────────────────────────── */
 .main {

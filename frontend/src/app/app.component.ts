@@ -14,7 +14,7 @@ import { AuthService } from './core/services/auth.service';
         <!-- ─── SIDEBAR ─────────────────────────────────── -->
         <aside class="sidebar">
           <div class="sidebar-logo">
-            <img src="assets/logo-luo-dark.png" alt="LUO People and Tech" class="sidebar-logo-img"
+            <img src="assets/logo-luo-green.png" alt="LUO People and Tech" class="sidebar-logo-img"
               (error)="onLogoError($event)" />
             <div class="sidebar-portfolio-label">Portfolio Management</div>
           </div>
