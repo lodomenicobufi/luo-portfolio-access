@@ -5,7 +5,7 @@ import { RouterLink, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
-import { Project, User, AppConfig, Task, ChecklistItem, Ticket, Richiesta } from '../../core/models';
+import { Project, User, AppConfig, Task, ChecklistItem, Ticket, Richiesta, ActivityLog } from '../../core/models';
 
 declare var Chart: any;
 
@@ -276,7 +276,7 @@ declare var Chart: any;
                 <div class="card-eyebrow">Attività recenti</div>
                 <div class="card-title">Ultimi eventi</div>
               </div>
-              <a routerLink="/projects" class="btn btn-s btn-sm">Tutto →</a>
+              <button class="btn btn-s btn-sm" (click)="goTo('/activities')">Vedi tutte →</button>
             </div>
             <div class="activity-list">
               @for (ev of recentEvents(); track ev.id) {
@@ -284,12 +284,18 @@ declare var Chart: any;
                   <div class="av-bubble" [style.background]="ev.color">{{ ev.initials }}</div>
                   <div class="activity-body">
                     <div class="activity-line"><strong>{{ ev.userName }}</strong> {{ ev.action }}</div>
-                    <div class="activity-sub">{{ ev.projectName }} · {{ ev.timeAgo }}</div>
+                    <div class="activity-sub">
+                      @if (ev.projectName) {
+                        <a [routerLink]="['/projects', ev.projectId]" style="color:var(--mint-dd);text-decoration:none;font-weight:500">{{ ev.projectName }}</a>
+                        <span> · </span>
+                      }
+                      {{ ev.timeAgo }}
+                    </div>
                   </div>
                 </div>
               }
               @if (recentEvents().length === 0) {
-                <div class="empty" style="padding:20px">Nessuna attività recente</div>
+                <div class="empty" style="padding:20px;font-size:13px;color:rgba(46,46,46,0.4)">Nessuna attività registrata</div>
               }
             </div>
           </div>
@@ -350,6 +356,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   checklist = signal<ChecklistItem[]>([]);
   tickets   = signal<Ticket[]>([]);
   richieste = signal<Richiesta[]>([]);
+  logs      = signal<ActivityLog[]>([]);
 
   // collapsible state
   projectsOpen  = signal(false);
@@ -410,27 +417,38 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   });
 
   recentEvents = computed(() => {
-    const projects = this.projects(); const users = this.users(); const events: any[] = [];
     const colors = ['#6EC0AA','#4a9e8a','#2E2E2E','#8aaca4','#B8D8CE'];
-    const mkEntry = (id: string, projectId: string, action: string, color?: string) => {
-      const proj = projects.find(p => p.id === projectId); if (!proj) return null;
-      const owner = users.find(u => u.id === proj.owner);
-      const name = owner?.name || 'Utente';
-      const parts = name.trim().split(' ');
-      const initials = parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
-      return { id, userName: name, initials, color: color || colors[name.charCodeAt(0) % colors.length], action, projectName: proj.nome };
+    const actionVerb: Record<string,string> = {
+      create:'ha creato', update:'ha modificato', delete:'ha eliminato',
+      status_change:'ha aggiornato lo stato di', link:'ha collegato un documento a',
+      accept:'ha accettato', reject:'ha respinto',
     };
-    this.tasks().filter(t => t.stato === 'Completato' && t.dataFine)
-      .sort((a,b) => new Date(b.dataFine).getTime() - new Date(a.dataFine).getTime()).slice(0,8)
-      .forEach(t => {
-        const e = mkEntry(t.id, t.projectId, `ha completato il task '${t.nome}'`);
-        if (e) events.push({ ...e, timeAgo: this.timeAgo(t.dataFine) });
-      });
-    this.checklist().filter(c => c.completato).slice(0,3).forEach(c => {
-      const e = mkEntry('cl-'+c.id, c.projectId, `ha caricato ${c.documento}`, '#6EC0AA');
-      if (e) events.push({ ...e, timeAgo: '—' });
+    const entityLabel: Record<string,string> = {
+      project:'il progetto', task:'il task', ticket:'il ticket',
+      checklist:'la checklist', richiesta:'la richiesta', subtask:'il subtask',
+    };
+    return this.logs().slice(0, 8).map(log => {
+      const user = this.users().find(u => u.id === log.userId);
+      const name = user?.name || 'Utente';
+      const parts = name.trim().split(' ');
+      const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : name.slice(0,2).toUpperCase();
+      let h = 0;
+      for (let i = 0; i < (log.userId||'').length; i++) h = (h*31 + log.userId.charCodeAt(i)) & 0xffff;
+      const action = `${actionVerb[log.action] || log.action} ${entityLabel[log.entityType] || log.entityType} "${log.entityName}"`;
+      const extra = (log.field && log.newValue) ? ` → ${log.field}: ${log.newValue}` : '';
+      return {
+        id: log.id,
+        userName: name,
+        initials,
+        color: colors[h % colors.length],
+        action: action + extra,
+        projectName: log.projectName || '',
+        projectId: log.projectId || '',
+        timeAgo: this.timeAgo(log.timestamp),
+      };
     });
-    return events.slice(0,6);
   });
 
   coverageList = computed(() => {
@@ -489,14 +507,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c, t, cl, tk, rq] = await Promise.all([
+    const [p, u, c, t, cl, tk, rq, lg] = await Promise.all([
       this.db.getProjects(), this.db.getUsers(), this.db.getConfig(),
       this.db.getTasks(), this.db.getChecklist(), this.db.getTickets(),
-      this.db.getRichieste()
+      this.db.getRichieste(), this.db.getLogs(50)
     ]);
     this.projects.set(p); this.users.set(u); this.config.set(c);
     this.tasks.set(t); this.checklist.set(cl); this.tickets.set(tk);
-    this.richieste.set(rq);
+    this.richieste.set(rq); this.logs.set(lg);
     this.loading.set(false);
     setTimeout(() => this.renderCharts(), 100);
   }
