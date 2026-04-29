@@ -120,7 +120,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── SIDEBAR ───────────────────────────────────────── */
 .sidebar {
-  background: #2E2E2E;
+  background: #363636;
   border-right: none;
   padding: 22px 14px;
   display: flex;
@@ -1287,7 +1287,62 @@ select.fi {
 .gantt-bar-label { font-size:10px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .gantt-bar-active .gantt-bar-label, .gantt-bar-done .gantt-bar-label { color:#fff; }
 
-/* ── ACTIVITIES PAGE ────────────────────────────────── */
+/* ── EDITORIAL TABLE STYLES ─────────────────────────── */
+.tbl-nome { font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.tbl-sub  { font-size: 11px; color: rgba(46,46,46,0.4); margin-top: 2px; }
+.tbl-bu   { font-size: 13px; color: rgba(46,46,46,0.65); }
+
+/* Owner avatar */
+.tbl-owner-cell { display:flex; align-items:center; gap:8px; }
+.tbl-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+}
+.tbl-owner-name { font-size: 13px; color: var(--ink); white-space: nowrap; }
+
+/* Progress column */
+.tbl-progress { display: flex; flex-direction: column; gap: 4px; }
+.tbl-dates {
+  display: flex; align-items: center; gap: 4px;
+  font-family: 'Geist Mono', monospace; font-size: 11px; color: rgba(46,46,46,0.5);
+}
+.tbl-arrow { color: rgba(46,46,46,0.3); }
+.tbl-pct {
+  margin-left: auto; font-size: 12px; font-weight: 700;
+  color: var(--ink); font-family: 'Geist Mono', monospace;
+}
+.tbl-pct-full { color: var(--mint-dd); }
+.tbl-pbar {
+  height: 3px; background: rgba(46,46,46,0.08); border-radius: 99px; overflow: hidden;
+  width: 100%; min-width: 120px;
+}
+.tbl-pfill {
+  height: 100%; border-radius: 99px; transition: width .3s;
+  &.hi { background: var(--mint); }
+  &.md { background: var(--mint-l); }
+  &.lo { background: rgba(46,46,46,0.2); }
+}
+
+/* Stato semplificato */
+.tbl-stato { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink); white-space: nowrap; }
+.tbl-stato-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.tbl-stato-blocked {
+  background: rgba(232,155,138,0.18); color: #a34a35;
+  border: 1px solid rgba(232,155,138,0.4);
+  border-radius: 20px; padding: 2px 9px; font-size: 12px; font-weight: 600;
+}
+
+/* Priorità inline */
+.tbl-prio { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: rgba(46,46,46,0.5); }
+.tbl-prio-critica { color: #a34a35; }
+.tbl-prio-alta { color: var(--ink); }
+.tbl-prio-media { color: rgba(46,46,46,0.55); }
+.tbl-prio-bassa { color: rgba(46,46,46,0.35); }
+
+/* Arrow chevron */
+.tbl-chevron { color: rgba(46,46,46,0.2); font-size: 13px; text-align: right; }
+.tbl tr.cp:hover .tbl-chevron { color: var(--mint); }
 .act-empty {
   display:flex; flex-direction:column; align-items:center;
   gap:8px; padding:60px 24px; color:rgba(46,46,46,0.4);

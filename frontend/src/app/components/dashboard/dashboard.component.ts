@@ -196,35 +196,51 @@ declare var Chart: any;
                 <thead>
                   <tr>
                     <th class="tbl-num"></th>
-                    <th>nome</th><th>priorità</th><th>area</th><th>owner</th>
-                    <th>stato</th><th>task in corso</th><th>completamento</th><th>scadenza</th>
+                    <th>progetto</th>
+                    <th>owner</th>
+                    <th>business unit</th>
+                    <th style="min-width:220px">avanzamento</th>
+                    <th>stato</th>
+                    <th>priorità</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (p of filtered(); track p.id; let i = $index) {
                     <tr class="cp" [routerLink]="['/projects', p.id]">
                       <td class="tbl-num">{{ (i + 1).toString().padStart(2, '0') }}</td>
-                      <td><strong>{{ p.nome }}</strong></td>
-                      <td><span class="prio-tag" [class]="'prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</span></td>
-                      <td><span class="badge bgr">{{ p.area }}</span></td>
-                      <td>{{ ownerName(p.owner) }}</td>
-                      <td><span class="badge" [class]="statoBadge(p.stato)">
-                        <span class="badge-dot" [style.background]="statoColor(p.stato)"></span>
-                        {{ p.stato }}
-                      </span></td>
                       <td>
-                        <div class="task-chip">
-                          <div class="task-dot" [style.background]="getActiveTaskColor(p.id)"></div>
-                          <span class="task-chip-text">{{ getActiveTask(p.id) }}</span>
+                        <div class="tbl-nome">{{ p.nome }}</div>
+                        <div class="tbl-sub">{{ p.tipologia }}</div>
+                      </td>
+                      <td>
+                        <div class="tbl-owner-cell">
+                          <div class="tbl-avatar" [style.background]="ownerColor(p.owner)">{{ ownerInitials(p.owner) }}</div>
+                          <span class="tbl-owner-name">{{ ownerName(p.owner) }}</span>
+                        </div>
+                      </td>
+                      <td class="tbl-bu">{{ p.businessUnit }}</td>
+                      <td>
+                        <div class="tbl-progress">
+                          <div class="tbl-dates">
+                            <span>{{ fmtDateShort(p.dataInizio) }}</span>
+                            <span class="tbl-arrow">→</span>
+                            <span>{{ fmtDateShort(p.dataFine) }}</span>
+                            <strong class="tbl-pct" [class.tbl-pct-full]="p.completamento===100">{{ p.completamento }}%</strong>
+                          </div>
+                          <div class="tbl-pbar">
+                            <div class="tbl-pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div>
+                          </div>
                         </div>
                       </td>
                       <td>
-                        <div class="pbar-row">
-                          <div class="pbar"><div class="pfill" [class]="pctClass(p.completamento)" [style.width.%]="p.completamento"></div></div>
-                          <span class="pct-lbl">{{ p.completamento }}%</span>
+                        <div class="tbl-stato">
+                          <span class="tbl-stato-dot" [style.background]="statoColor(p.stato)"></span>
+                          <span [class.tbl-stato-blocked]="p.stato==='On Hold' || p.stato==='Bloccato'">{{ p.stato }}</span>
                         </div>
                       </td>
-                      <td [class.text-danger]="isScaduto(p)">{{ fmtDate(p.dataFine) }}{{ isScaduto(p) ? ' !' : '' }}</td>
+                      <td class="tbl-prio" [class]="'tbl-prio-' + p.priorita.toLowerCase()">{{ p.priorita }}</td>
+                      <td class="tbl-chevron">→</td>
                     </tr>
                   }
                   @if (filtered().length === 0) {
@@ -747,6 +763,22 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   richiestaUser(id: string)      { return this.users().find(u => u.id === id)?.name || '—'; }
   richiestaStatoBadge(s: string) { return s === 'Accettata' ? 'status-compl' : s === 'Respinta' ? 'status-attesa' : 'status-pianif'; }
   richiestaStatoColor(s: string) { return s === 'Accettata' ? '#6EC0AA' : s === 'Respinta' ? '#E89B8A' : '#B8D8CE'; }
+
+  ownerInitials(ownerId: string): string {
+    const name = this.ownerName(ownerId);
+    const parts = name.trim().split(' ');
+    return parts.length >= 2 ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase() : name.slice(0,2).toUpperCase();
+  }
+  ownerColor(ownerId: string): string {
+    const colors = ['#6EC0AA','#4a9e8a','#2E2E2E','#8aaca4','#5a8a7a','#3d6b5e'];
+    let h = 0; for (let i = 0; i < ownerId.length; i++) h = (h*31 + ownerId.charCodeAt(i)) & 0xffff;
+    return colors[h % colors.length];
+  }
+  fmtDateShort(d: string): string {
+    if (!d) return '—';
+    const dt = new Date(d);
+    return (dt.getMonth()+1).toString().padStart(2,'0') + '-' + dt.getDate().toString().padStart(2,'0');
+  }
 
   pctClass(n: number): string { return n >= 70 ? 'hi' : n >= 40 ? 'md' : 'lo'; }
   timeAgo(dateStr: string): string {
