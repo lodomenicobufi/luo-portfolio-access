@@ -1220,6 +1220,74 @@ select.fi {
 .gantt-bar-label { font-size:10px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 .gantt-bar-active .gantt-bar-label, .gantt-bar-done .gantt-bar-label { color:#fff; }
 
+/* ── ACTIVITIES PAGE ────────────────────────────────── */
+.act-empty {
+  display:flex; flex-direction:column; align-items:center;
+  gap:8px; padding:60px 24px; color:rgba(46,46,46,0.4);
+  p { margin:0; font-size:14px; }
+}
+.act-day-group { padding:0 0 8px; }
+.act-day-label {
+  font-size:11px; font-weight:700; letter-spacing:.5px;
+  text-transform:uppercase; color:rgba(46,46,46,0.4);
+  padding:16px 24px 8px; position:sticky; top:0;
+  background:var(--bg-elev); z-index:1;
+  border-bottom:1px solid rgba(46,46,46,0.06);
+}
+.act-row {
+  display:flex; align-items:flex-start; gap:14px;
+  padding:14px 24px; border-bottom:1px solid rgba(46,46,46,0.05);
+  transition:background .1s;
+  &:hover { background:rgba(46,46,46,0.015); }
+  &:last-child { border-bottom:none; }
+}
+.act-avatar {
+  width:34px; height:34px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:12px; font-weight:700; color:#fff;
+  margin-top:1px;
+}
+.act-content { flex:1; min-width:0; }
+.act-main {
+  font-size:13.5px; color:var(--ink); line-height:1.4;
+  display:flex; flex-wrap:wrap; align-items:baseline; gap:4px;
+}
+.act-username { font-weight:700; }
+.act-verb { color:rgba(46,46,46,0.6); }
+.act-entity-type { color:rgba(46,46,46,0.5); font-size:12.5px; }
+.act-entity-name { font-weight:600; }
+.act-field { color:rgba(46,46,46,0.45); font-size:12px; font-style:italic; }
+.act-change {
+  display:inline-flex; align-items:center; gap:6px;
+  margin-top:5px; padding:3px 10px; border-radius:6px;
+  background:rgba(46,46,46,0.04); border:1px solid rgba(46,46,46,0.08);
+  font-size:12px;
+}
+.act-old { color:rgba(46,46,46,0.4); text-decoration:line-through; }
+.act-arrow { color:rgba(46,46,46,0.3); font-size:11px; }
+.act-new { color:var(--ink); font-weight:600; }
+.act-meta {
+  display:flex; align-items:center; gap:10px;
+  margin-top:5px; font-size:11.5px; color:rgba(46,46,46,0.45);
+}
+.act-project-link {
+  display:inline-flex; align-items:center; gap:4px;
+  color:var(--mint-dd); text-decoration:none; font-weight:500;
+  &:hover { text-decoration:underline; }
+}
+.act-note { font-style:italic; color:rgba(46,46,46,0.5); }
+.act-time { margin-left:auto; }
+.act-badge {
+  flex-shrink:0; padding:3px 9px; border-radius:20px;
+  font-size:10.5px; font-weight:600; letter-spacing:.3px;
+  white-space:nowrap; margin-top:2px;
+}
+.act-badge-green { background:rgba(110,192,170,0.15); color:var(--mint-dd); border:1px solid rgba(110,192,170,0.3); }
+.act-badge-red   { background:rgba(232,155,138,0.15); color:#a34a35; border:1px solid rgba(232,155,138,0.3); }
+.act-badge-blue  { background:rgba(93,107,138,0.12); color:#4a5a8a; border:1px solid rgba(93,107,138,0.25); }
+.act-badge-gray  { background:rgba(46,46,46,0.06); color:rgba(46,46,46,0.55); border:1px solid rgba(46,46,46,0.12); }
+.act-more { text-align:center; padding:16px; font-size:12px; color:rgba(46,46,46,0.4); }
+
 /* ── COLLAPSIBLE CARDS ──────────────────────────────── */
 .collapsible-card { overflow: hidden; }
 .collapsible-hdr {

@@ -598,6 +598,12 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       linkUrl: this.linkEditValue.trim(),
       projectId
     });
+    await this.db.logAction({
+      userId: this.auth.currentUser()?.id || '', action: 'link',
+      entityType: 'checklist', entityId: entry?.id || doc, entityName: doc,
+      projectId, projectName: this.project()!.nome,
+      field: 'linkUrl', oldValue: entry?.linkUrl || '', newValue: this.linkEditValue.trim(),
+    });
     this.checklist.set(await this.db.getChecklist(projectId));
     this.linkEditDoc.set(null);
   }
@@ -796,8 +802,23 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   async saveProject() {
     if (!this.project()) return;
     this.saving.set(true);
-    await this.db.updateProject(this.project()!.id, this.editForm as Project);
-    this.project.set({ ...this.project()!, ...this.editForm } as Project);
+    const old = this.project()!;
+    await this.db.updateProject(old.id, this.editForm as Project);
+    // Log campi modificati
+    const uid = this.auth.currentUser()?.id || '';
+    const changedFields = Object.keys(this.editForm).filter(k =>
+      (this.editForm as any)[k] !== (old as any)[k]
+    );
+    for (const field of changedFields) {
+      await this.db.logAction({
+        userId: uid, action: 'update', entityType: 'project',
+        entityId: old.id, entityName: old.nome,
+        projectId: old.id, projectName: old.nome,
+        field, oldValue: String((old as any)[field] ?? ''),
+        newValue: String((this.editForm as any)[field] ?? ''),
+      });
+    }
+    this.project.set({ ...old, ...this.editForm } as Project);
     this.editMode.set(false);
     this.saving.set(false);
     this.showToast('Progetto aggiornato');
@@ -807,7 +828,14 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   completatiCount(): number { return this.checklist().filter(c => c.completato).length; }
   async toggleChecklist(doc: string, entry: ChecklistItem | undefined) {
     const projectId = this.project()!.id;
-    await this.db.upsertChecklistItem({ id: entry?.id, documento: doc, completato: !entry?.completato, linkUrl: this.checklistLinks[doc]||'', projectId });
+    const newVal = !entry?.completato;
+    await this.db.upsertChecklistItem({ id: entry?.id, documento: doc, completato: newVal, linkUrl: this.checklistLinks[doc]||'', projectId });
+    await this.db.logAction({
+      userId: this.auth.currentUser()?.id || '', action: 'update', entityType: 'checklist',
+      entityId: entry?.id || doc, entityName: doc,
+      projectId, projectName: this.project()!.nome,
+      field: 'completato', oldValue: String(!newVal), newValue: String(newVal),
+    });
     this.checklist.set(await this.db.getChecklist(projectId));
   }
   async saveChecklistLink(doc: string, entry: ChecklistItem | undefined) {
@@ -826,7 +854,16 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async updateTaskCascade(t: Task): Promise<void> {
+    const old = this.tasks().find(x => x.id === t.id);
+    const oldStato = old?.stato || '';
     const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
+    await this.db.logAction({
+      userId: this.auth.currentUser()?.id || '',
+      action: t.stato !== oldStato ? 'status_change' : 'update',
+      entityType: 'task', entityId: t.id, entityName: t.nome,
+      projectId: t.projectId, projectName: this.project()!.nome,
+      field: 'stato', oldValue: oldStato, newValue: t.stato,
+    });
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
     this.showToast('Task aggiornato');

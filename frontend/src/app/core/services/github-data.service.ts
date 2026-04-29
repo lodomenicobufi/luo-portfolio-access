@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { User, Project, Task, ChecklistItem, Ticket, AppConfig, Richiesta } from '../models';
+import { User, Project, Task, ChecklistItem, Ticket, AppConfig, Richiesta, ActivityLog } from '../models';
 
 export interface GithubConfig {
   owner: string;
@@ -457,5 +457,57 @@ export class GithubDataService {
     const today = new Date().toISOString().split('T')[0];
     await this.updateRichiesta(id, { stato: 'Respinta', note, dataEsito: today, gestitaId });
   }
-}
 
+  // ── ACTIVITY LOG ─────────────────────────────────────────────────
+  private logHeaders = ['id','timestamp','userId','action','entityType','entityId','entityName',
+    'projectId','projectName','field','oldValue','newValue','note'];
+
+  async getLogs(limit = 200): Promise<ActivityLog[]> {
+    try {
+      const csv = await this.readFile('data/activity_log.csv');
+      const all = this.parseCsv<ActivityLog>(csv);
+      return all.sort((a, b) => b.timestamp.localeCompare(a.timestamp)).slice(0, limit);
+    } catch { return []; }
+  }
+
+  async addLog(entry: Omit<ActivityLog, 'id'>): Promise<void> {
+    try {
+      const all = await this.getLogs(500);
+      const log: ActivityLog = { ...entry as any, id: 'log-' + Date.now() };
+      all.unshift(log);
+      // Mantieni solo gli ultimi 500 log
+      await this.writeFile('data/activity_log.csv',
+        this.toCsv(all.slice(0, 500), this.logHeaders), 'Activity log');
+    } catch { /* non bloccare l'operazione principale */ }
+  }
+
+  // Helper per loggare facilmente
+  async logAction(params: {
+    userId: string;
+    action: ActivityLog['action'];
+    entityType: ActivityLog['entityType'];
+    entityId: string;
+    entityName: string;
+    projectId?: string;
+    projectName?: string;
+    field?: string;
+    oldValue?: string;
+    newValue?: string;
+    note?: string;
+  }): Promise<void> {
+    await this.addLog({
+      timestamp: new Date().toISOString(),
+      userId: params.userId,
+      action: params.action,
+      entityType: params.entityType,
+      entityId: params.entityId,
+      entityName: params.entityName,
+      projectId: params.projectId || '',
+      projectName: params.projectName || '',
+      field: params.field || '',
+      oldValue: params.oldValue || '',
+      newValue: params.newValue || '',
+      note: params.note || '',
+    });
+  }
+}

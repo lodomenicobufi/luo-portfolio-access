@@ -98,6 +98,22 @@ export interface Richiesta {
   progettoCreato: string;      // id del progetto generato (se accettata)
 }
 
+export interface ActivityLog {
+  id: string;
+  timestamp: string;         // ISO date
+  userId: string;            // chi ha fatto l'azione
+  action: 'create' | 'update' | 'delete' | 'status_change' | 'link' | 'accept' | 'reject';
+  entityType: 'project' | 'task' | 'ticket' | 'checklist' | 'richiesta' | 'subtask';
+  entityId: string;
+  entityName: string;        // nome leggibile dell'entità
+  projectId: string;         // progetto di riferimento (se applicabile)
+  projectName: string;
+  field: string;             // campo modificato (es. "stato", "priorita")
+  oldValue: string;
+  newValue: string;
+  note: string;              // eventuale nota libera
+}
+
 // Nomi fissi dei task in sequenza
 export const TASK_SEQUENCE = [
   'REQUISITI',

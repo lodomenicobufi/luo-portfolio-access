@@ -42,6 +42,13 @@ import { AuthService } from './core/services/auth.service';
             <span class="nav-lbl">Richieste</span>
           </a>
 
+          <a routerLink="/activities" routerLinkActive="active" class="side-nav-item">
+            <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            <span class="nav-lbl">Attività</span>
+          </a>
+
           @if (auth.currentUser()?.role === 'admin') {
             <a routerLink="/users" routerLinkActive="active" class="side-nav-item">
               <svg class="nav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -131,6 +138,7 @@ export class AppComponent implements OnInit {
     const url = this.router.url;
     if (url.startsWith('/dashboard')) return 'Dashboard';
     if (url.startsWith('/projects')) return 'Progetti';
+    if (url.startsWith('/activities')) return 'Attività';
     if (url.startsWith('/richieste')) return 'Richieste';
     if (url.startsWith('/users')) return 'Utenti';
     if (url.startsWith('/config')) return 'Configurazione';

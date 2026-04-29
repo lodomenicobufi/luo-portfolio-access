@@ -398,6 +398,11 @@ export class RichiesteComponent implements OnInit {
         stato: 'In valutazione', note: '',
         dataCreazione: this.todayIso(), dataEsito: '', gestitaId: '', progettoCreato: '',
       });
+      await this.db.logAction({
+        userId: this.currentUserId(), action: 'create', entityType: 'richiesta',
+        entityId: r.id, entityName: r.titolo,
+        note: r.descrizione.slice(0, 100),
+      });
       this.richieste.update(list => [r, ...list]);
       this.modal.set(null);
     } finally { this.saving.set(false); }
@@ -410,6 +415,12 @@ export class RichiesteComponent implements OnInit {
       const newProj = await this.db.accettaRichiesta(
         r.id, this.currentUserId(), this.projects(), this.users(), this.config()!
       );
+      await this.db.logAction({
+        userId: this.currentUserId(), action: 'accept', entityType: 'richiesta',
+        entityId: r.id, entityName: r.titolo,
+        projectId: newProj.id, projectName: newProj.nome,
+        newValue: 'Accettata',
+      });
       this.createdProject.set(newProj);
       this.postForm = { area: '', fornitore: '', documentazione: 'parziale' };
       await this.load();
@@ -422,6 +433,11 @@ export class RichiesteComponent implements OnInit {
     this.saving.set(true);
     try {
       await this.db.respingiRichiesta(r.id, this.currentUserId(), this.noteRespinta.trim());
+      await this.db.logAction({
+        userId: this.currentUserId(), action: 'reject', entityType: 'richiesta',
+        entityId: r.id, entityName: r.titolo,
+        newValue: 'Respinta', note: this.noteRespinta.trim(),
+      });
       await this.load(); this.modal.set(null);
     } finally { this.saving.set(false); }
   }

@@ -40,6 +40,11 @@ export const routes: Routes = [
     loadComponent: () => import('./components/project-detail/project-detail.component').then(m => m.ProjectDetailComponent)
   },
   {
+    path: 'activities',
+    canActivate: [authGuard],
+    loadComponent: () => import('./components/activities/activities.component').then(m => m.ActivitiesComponent)
+  },
+  {
     path: 'richieste',
     canActivate: [authGuard],
     loadComponent: () => import('./components/richieste/richieste.component').then(m => m.RichiesteComponent)
