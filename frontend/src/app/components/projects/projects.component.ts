@@ -245,7 +245,6 @@ export class ProjectsComponent implements OnInit {
     // Legge filtri pre-impostati da queryParams (es. dalla dashboard)
     const params = inject(ActivatedRoute).snapshot.queryParams;
     if (params['stato']) this.fStato = params['stato'];
-    if (params['bu'])    this.fBU   = params['bu'];
     if (params['prio'])  this.fPrio = params['prio'];
     this.load();
   }
