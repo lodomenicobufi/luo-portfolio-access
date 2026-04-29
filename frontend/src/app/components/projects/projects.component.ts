@@ -1,8 +1,9 @@
 // src/app/components/projects/projects.component.ts
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { Subscription } from 'rxjs';
 import { GithubDataService } from '../../core/services/github-data.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Project, User, AppConfig } from '../../core/models';
@@ -205,12 +206,13 @@ import { Project, User, AppConfig } from '../../core/models';
     }
   `,
 })
-export class ProjectsComponent implements OnInit {
+export class ProjectsComponent implements OnInit, OnDestroy {
+  private paramSub?: Subscription;
   db    = inject(GithubDataService);
   auth  = inject(AuthService);
   route = inject(ActivatedRoute);
 
-  loading = signal(true);
+  loading = signal(false);
   saving = signal(false);
   showModal = signal(false);
   projects = signal<Project[]>([]);
@@ -243,11 +245,14 @@ export class ProjectsComponent implements OnInit {
   }
 
   ngOnInit() {
-    const params = this.route.snapshot.queryParams;
-    if (params['stato']) this.fStato = params['stato'];
-    if (params['prio'])  this.fPrio  = params['prio'];
+    this.paramSub = this.route.queryParams.subscribe(params => {
+      if (params['stato']) this.fStato = params['stato'];
+      if (params['prio'])  this.fPrio  = params['prio'];
+    });
     this.load();
   }
+
+  ngOnDestroy() { this.paramSub?.unsubscribe(); }
 
   async load() {
     this.loading.set(true);
