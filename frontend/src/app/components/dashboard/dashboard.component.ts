@@ -396,75 +396,106 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private router = inject(Router);
 
   exportCsv() {
-    const projects = this.projects();
-    const tasks    = this.tasks();
-    const tickets  = this.tickets();
+    const projects  = this.projects();
+    const tasks     = this.tasks();
+    const subtasks  = this.subtasks();
+    const tickets   = this.tickets();
     const checklist = this.checklist();
-    const users    = this.users();
+    const users     = this.users();
 
     const ownerName = (id: string) => users.find(u => u.id === id)?.name || id;
-
-    // ── Sheet 1: Progetti ──────────────────────────────────
-    const projHeaders = [
-      'ID','Nome','Descrizione','Tipologia','Area','Business Unit','Fornitore',
-      'Owner','Stato','Priorità','Data Inizio','Data Fine','Completamento %',
-      'Documentazione','Repository URL'
-    ];
-    const projRows = projects.map(p => [
-      p.id, p.nome, p.descrizione, p.tipologia, p.area, p.businessUnit,
-      p.fornitore, ownerName(p.owner), p.stato, p.priorita,
-      p.dataInizio, p.dataFine, p.completamento, p.documentazione, p.repositoryUrl
-    ]);
-
-    // ── Sheet 2: Task ──────────────────────────────────────
-    const taskHeaders = ['ID Task','Progetto','Nome Task','Stato','Data Inizio','Data Fine'];
-    const taskRows = tasks.map(t => {
-      const proj = projects.find(p => p.id === t.projectId);
-      return [t.id, proj?.nome || t.projectId, t.nome, t.stato, t.dataInizio, t.dataFine];
-    });
-
-    // ── Sheet 3: Ticket ────────────────────────────────────
-    const ticketHeaders = ['ID Ticket','Progetto','Titolo','Stato','Priorità','Data Apertura','Data Chiusura','Note'];
-    const ticketRows = tickets.map(t => {
-      const proj = projects.find(p => p.id === t.projectId);
-      return [t.id, proj?.nome || t.projectId, t.titolo, t.stato, t.priorita, t.dataApertura, t.dataChiusura || '', t.note || ''];
-    });
-
-    // ── Sheet 4: Checklist ─────────────────────────────────
-    const chkHeaders = ['ID','Progetto','Documento','Completato','Link'];
-    const chkRows = checklist.map(c => {
-      const proj = projects.find(p => p.id === c.projectId);
-      return [c.id, proj?.nome || c.projectId, c.documento, c.completato ? 'Sì' : 'No', c.linkUrl || ''];
-    });
-
-    // ── Build multi-section CSV ────────────────────────────
     const esc = (v: any) => {
       const s = String(v ?? '').replace(/"/g, '""');
       return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
     };
-    const toCsv = (headers: string[], rows: any[][]) =>
-      [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
 
-    // ── Sheet 5: Sotto-task ────────────────────────────────
-    const subHeaders = ['ID Sotto-task','Task Padre','Progetto','Nome','Stato','Data Inizio','Data Fine'];
-    const subRows = this.subtasks().map(s => {
-      const parentTask = tasks.find(t => t.id === s.taskId);
-      const proj = projects.find(p => p.id === s.projectId);
-      return [s.id, parentTask?.nome || s.taskId, proj?.nome || s.projectId, s.nome, s.stato, s.dataInizio || '', s.dataFine || ''];
-    });
+    // Colonne checklist dinamiche (una per documento)
+    const docFields = this.config()?.docFields || [];
 
-    const sections = [
-      `=== PROGETTI ===\n${toCsv(projHeaders, projRows)}`,
-      `\n\n=== TASK ===\n${toCsv(taskHeaders, taskRows)}`,
-      `\n\n=== SOTTO-TASK ===\n${toCsv(subHeaders, subRows)}`,
-      `\n\n=== TICKET SERVICE DESK ===\n${toCsv(ticketHeaders, ticketRows)}`,
-      `\n\n=== CHECKLIST DOCUMENTI ===\n${toCsv(chkHeaders, chkRows)}`,
-    ].join('');
+    const headers = [
+      // Progetto
+      'Progetto ID', 'Progetto Nome', 'Descrizione', 'Tipologia', 'Area',
+      'Business Unit', 'Fornitore', 'Owner', 'Stato Progetto', 'Priorità',
+      'Data Inizio Progetto', 'Data Fine Progetto', 'Completamento %', 'Documentazione', 'Repository URL',
+      // Task
+      'Task ID', 'Task Nome', 'Task Stato', 'Task Data Inizio', 'Task Data Fine',
+      // Sotto-task
+      'Sotto-task ID', 'Sotto-task Nome', 'Sotto-task Stato', 'Sotto-task Data Inizio', 'Sotto-task Data Fine',
+      // Ticket (aggregati)
+      'N° Ticket Aperti', 'N° Ticket Critici',
+      // Checklist (una colonna per documento)
+      ...docFields.map(d => `Doc: ${d}`),
+      ...docFields.map(d => `Link: ${d}`),
+    ];
 
-    const blob = new Blob(['\ufeff' + sections], { type: 'text/csv;charset=utf-8;' });
+    const rows: string[][] = [];
+
+    for (const p of projects) {
+      const projTasks   = tasks.filter(t => t.projectId === p.id);
+      const projTickets = tickets.filter(t => t.projectId === p.id);
+      const projChk     = checklist.filter(c => c.projectId === p.id);
+
+      const ticketAperti  = projTickets.filter(t => t.stato !== 'Chiuso' && t.stato !== 'Risolto').length;
+      const ticketCritici = projTickets.filter(t => t.priorita === 'Critica' && t.stato !== 'Chiuso').length;
+
+      // Colonne checklist: completato e link per ogni docField
+      const chkCompletato = docFields.map(d => {
+        const entry = projChk.find(c => c.documento === d);
+        return entry?.completato ? 'Sì' : 'No';
+      });
+      const chkLink = docFields.map(d => {
+        const entry = projChk.find(c => c.documento === d);
+        return entry?.linkUrl || '';
+      });
+
+      const projBase = [
+        p.id, p.nome, p.descrizione, p.tipologia, p.area,
+        p.businessUnit, p.fornitore, ownerName(p.owner), p.stato, p.priorita,
+        p.dataInizio, p.dataFine, p.completamento, p.documentazione, p.repositoryUrl,
+      ];
+
+      if (projTasks.length === 0) {
+        // Progetto senza task: una riga con task e sotto-task vuoti
+        rows.push([
+          ...projBase,
+          '', '', '', '', '',   // task
+          '', '', '', '', '',   // sotto-task
+          ticketAperti, ticketCritici,
+          ...chkCompletato, ...chkLink
+        ].map(String));
+      } else {
+        for (const t of projTasks) {
+          const taskSubs = subtasks.filter(s => s.taskId === t.id);
+
+          const taskBase = [t.id, t.nome, t.stato, t.dataInizio || '', t.dataFine || ''];
+
+          if (taskSubs.length === 0) {
+            // Task senza sotto-task
+            rows.push([
+              ...projBase, ...taskBase,
+              '', '', '', '', '',   // sotto-task
+              ticketAperti, ticketCritici,
+              ...chkCompletato, ...chkLink
+            ].map(String));
+          } else {
+            for (const st of taskSubs) {
+              rows.push([
+                ...projBase, ...taskBase,
+                st.id, st.nome, st.stato, st.dataInizio || '', st.dataFine || '',
+                ticketAperti, ticketCritici,
+                ...chkCompletato, ...chkLink
+              ].map(String));
+            }
+          }
+        }
+      }
+    }
+
+    const csv = [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    const date = new Date().toISOString().slice(0,10);
+    const date = new Date().toISOString().slice(0, 10);
     a.href     = url;
     a.download = `LUO_Portfolio_${date}.csv`;
     document.body.appendChild(a);
