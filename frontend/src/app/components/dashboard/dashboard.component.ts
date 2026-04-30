@@ -188,7 +188,15 @@ declare var Chart: any;
                 <div class="card-title">{{ filtered().length }} risultati</div>
               </div>
             </div>
-            <button class="btn btn-s btn-sm" (click)="$event.stopPropagation(); goTo('/projects')">Vedi tutti →</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button class="btn btn-s btn-sm" (click)="$event.stopPropagation(); exportCsv()" title="Esporta tutti i dati in CSV">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="margin-right:4px">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Esporta CSV
+              </button>
+              <button class="btn btn-s btn-sm" (click)="$event.stopPropagation(); goTo('/projects')">Vedi tutti →</button>
+            </div>
           </div>
           @if (projectsOpen()) {
             <div class="tbl-wrap">
@@ -387,6 +395,84 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   private auth   = inject(AuthService);
   private router = inject(Router);
 
+  exportCsv() {
+    const projects = this.projects();
+    const tasks    = this.tasks();
+    const tickets  = this.tickets();
+    const checklist = this.checklist();
+    const users    = this.users();
+
+    const ownerName = (id: string) => users.find(u => u.id === id)?.name || id;
+
+    // ── Sheet 1: Progetti ──────────────────────────────────
+    const projHeaders = [
+      'ID','Nome','Descrizione','Tipologia','Area','Business Unit','Fornitore',
+      'Owner','Stato','Priorità','Data Inizio','Data Fine','Completamento %',
+      'Documentazione','Repository URL'
+    ];
+    const projRows = projects.map(p => [
+      p.id, p.nome, p.descrizione, p.tipologia, p.area, p.businessUnit,
+      p.fornitore, ownerName(p.owner), p.stato, p.priorita,
+      p.dataInizio, p.dataFine, p.completamento, p.documentazione, p.repositoryUrl
+    ]);
+
+    // ── Sheet 2: Task ──────────────────────────────────────
+    const taskHeaders = ['ID Task','Progetto','Nome Task','Stato','Data Inizio','Data Fine'];
+    const taskRows = tasks.map(t => {
+      const proj = projects.find(p => p.id === t.projectId);
+      return [t.id, proj?.nome || t.projectId, t.nome, t.stato, t.dataInizio, t.dataFine];
+    });
+
+    // ── Sheet 3: Ticket ────────────────────────────────────
+    const ticketHeaders = ['ID Ticket','Progetto','Titolo','Stato','Priorità','Data Apertura','Data Chiusura','Note'];
+    const ticketRows = tickets.map(t => {
+      const proj = projects.find(p => p.id === t.projectId);
+      return [t.id, proj?.nome || t.projectId, t.titolo, t.stato, t.priorita, t.dataApertura, t.dataChiusura || '', t.note || ''];
+    });
+
+    // ── Sheet 4: Checklist ─────────────────────────────────
+    const chkHeaders = ['ID','Progetto','Documento','Completato','Link'];
+    const chkRows = checklist.map(c => {
+      const proj = projects.find(p => p.id === c.projectId);
+      return [c.id, proj?.nome || c.projectId, c.documento, c.completato ? 'Sì' : 'No', c.linkUrl || ''];
+    });
+
+    // ── Build multi-section CSV ────────────────────────────
+    const esc = (v: any) => {
+      const s = String(v ?? '').replace(/"/g, '""');
+      return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s}"` : s;
+    };
+    const toCsv = (headers: string[], rows: any[][]) =>
+      [headers, ...rows].map(r => r.map(esc).join(',')).join('\n');
+
+    // ── Sheet 5: Sotto-task ────────────────────────────────
+    const subHeaders = ['ID Sotto-task','Task Padre','Progetto','Nome','Stato','Data Inizio','Data Fine'];
+    const subRows = this.subtasks().map(s => {
+      const parentTask = tasks.find(t => t.id === s.taskId);
+      const proj = projects.find(p => p.id === s.projectId);
+      return [s.id, parentTask?.nome || s.taskId, proj?.nome || s.projectId, s.nome, s.stato, s.dataInizio || '', s.dataFine || ''];
+    });
+
+    const sections = [
+      `=== PROGETTI ===\n${toCsv(projHeaders, projRows)}`,
+      `\n\n=== TASK ===\n${toCsv(taskHeaders, taskRows)}`,
+      `\n\n=== SOTTO-TASK ===\n${toCsv(subHeaders, subRows)}`,
+      `\n\n=== TICKET SERVICE DESK ===\n${toCsv(ticketHeaders, ticketRows)}`,
+      `\n\n=== CHECKLIST DOCUMENTI ===\n${toCsv(chkHeaders, chkRows)}`,
+    ].join('');
+
+    const blob = new Blob(['\ufeff' + sections], { type: 'text/csv;charset=utf-8;' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const date = new Date().toISOString().slice(0,10);
+    a.href     = url;
+    a.download = `LUO_Portfolio_${date}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   goTo(path: string) {
     const [url, qs] = path.split('?');
     if (qs) {
@@ -407,6 +493,7 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   tickets   = signal<Ticket[]>([]);
   richieste = signal<Richiesta[]>([]);
   logs      = signal<ActivityLog[]>([]);
+  subtasks  = signal<any[]>([]);
 
   // collapsible state
   projectsOpen  = signal(false);
@@ -647,14 +734,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
 
   async load() {
     this.loading.set(true);
-    const [p, u, c, t, cl, tk, rq, lg] = await Promise.all([
+    const [p, u, c, t, cl, tk, rq, lg, st] = await Promise.all([
       this.db.getProjects(), this.db.getUsers(), this.db.getConfig(),
       this.db.getTasks(), this.db.getChecklist(), this.db.getTickets(),
-      this.db.getRichieste(), this.db.getLogs(50)
+      this.db.getRichieste(), this.db.getLogs(50), this.db.getSubTasks()
     ]);
     this.projects.set(p); this.users.set(u); this.config.set(c);
     this.tasks.set(t); this.checklist.set(cl); this.tickets.set(tk);
-    this.richieste.set(rq); this.logs.set(lg);
+    this.richieste.set(rq); this.logs.set(lg); this.subtasks.set(st);
     this.loading.set(false);
     setTimeout(() => this.renderCharts(), 100);
   }
