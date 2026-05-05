@@ -1,3 +1,4 @@
 id,timestamp,userId,action,entityType,entityId,entityName,projectId,projectName,field,oldValue,newValue,note
+log-1777994512646,2026-05-05T15:21:52.287Z,u1,create,richiesta,req-1777994511183,gggg,,,,,,gggg
 log-1777480128426,2026-04-29T16:28:48.068Z,u1,update,checklist,Documento di progetto,Documento di progetto,p1,Portale HR Digitale,completato,false,true,
 log-1777480118373,2026-04-29T16:28:38.019Z,u1,update,checklist,Analisi dei requisiti,Analisi dei requisiti,p1,Portale HR Digitale,completato,false,true,
