@@ -1,50 +1,57 @@
-id,nome,dataInizio,dataFine,stato,projectId
-t1,REQUISITI,2024-01-15,0020-12-10,Completato,p1
-t2,TEMPI E STIME,2024-04-11,,Da fare,p1
-t3,SVILUPPO,,,Da fare,p1
-t4,COLLAUDO LDT,,,Da fare,p1
-t5,COLLAUDO BU,,,Da fare,p1
-t6,PRODUZIONE,,,Da fare,p1
-t7,ADOPTION,,,Da fare,p1
-t8,REQUISITI,2024-03-01,,In corso,p2
-t9,TEMPI E STIME,,,Da fare,p2
-t10,SVILUPPO,,,Da fare,p2
-t11,COLLAUDO LDT,,,Da fare,p2
-t12,COLLAUDO BU,,,Da fare,p2
-t13,PRODUZIONE,,,Da fare,p2
-t14,ADOPTION,,,Da fare,p2
-_juq3ezf,REQUISITI,2026-04-28,2026-04-30,Completato,_7xqb4fk
-_mcnx4d7,TEMPI E STIME,2026-05-01,,Da fare,_7xqb4fk
-_25m0ncz,SVILUPPO,,,Da fare,_7xqb4fk
-_tyxhvfe,COLLAUDO LDT,,,Da fare,_7xqb4fk
-_rjw1v6z,COLLAUDO BU,,,Da fare,_7xqb4fk
-_pdk2bg8,PRODUZIONE,,,Da fare,_7xqb4fk
-_zv4hvzd,ADOPTION,,,Da fare,_7xqb4fk
-_z5j2678,REQUISITI,2026-04-28,2026-05-07,Completato,_mgls32l
-_r0gqlxw,TEMPI E STIME,2026-05-08,,Da fare,_mgls32l
-_hwyjplp,SVILUPPO,,,Da fare,_mgls32l
-_irhhf6y,COLLAUDO LDT,,,Da fare,_mgls32l
-_ar0m20x,COLLAUDO BU,,,Da fare,_mgls32l
-_5zomlls,PRODUZIONE,,,Da fare,_mgls32l
-_ae18f4p,ADOPTION,,,Da fare,_mgls32l
-_o2fsosq,REQUISITI,2026-05-05,,Da fare,_io7jtyz
-_c62bxzv,TEMPI E STIME,,,Da fare,_io7jtyz
-_jyhc1l0,SVILUPPO,,,Da fare,_io7jtyz
-_pb1x1fz,COLLAUDO LDT,,,Da fare,_io7jtyz
-_pm4tme1,COLLAUDO BU,,,Da fare,_io7jtyz
-_tr012ro,PRODUZIONE,,,Da fare,_io7jtyz
-_8609rob,ADOPTION,,,Da fare,_io7jtyz
-_a6dpq0v,REQUISITI,2026-05-05,,Da fare,_x37bu8h
-_0f3rk87,TEMPI E STIME,,,Da fare,_x37bu8h
-_xr8i42a,SVILUPPO,,,Da fare,_x37bu8h
-_os1ad0f,COLLAUDO LDT,,,Da fare,_x37bu8h
-_7r175i9,COLLAUDO BU,,,Da fare,_x37bu8h
-_444nop8,PRODUZIONE,,,Da fare,_x37bu8h
-_lk32ywk,ADOPTION,,,Da fare,_x37bu8h
-_662ahul,REQUISITI,2026-05-05,,Da fare,_aggde8o
-_y043cow,TEMPI E STIME,,,Da fare,_aggde8o
-_llwx521,SVILUPPO,,,Da fare,_aggde8o
-_ekx7jl6,COLLAUDO LDT,,,Da fare,_aggde8o
-_dmkkekk,COLLAUDO BU,,,Da fare,_aggde8o
-_pbexzsc,PRODUZIONE,,,Da fare,_aggde8o
-_kim2i3g,ADOPTION,,,Da fare,_aggde8o
+id,nome,dataInizio,dataFine,stato,projectId,settimaneStimate
+t1,REQUISITI,2024-01-15,0020-12-10,Completato,p1,
+t2,TEMPI E STIME,2024-04-11,,Da fare,p1,
+t3,SVILUPPO,,,Da fare,p1,
+t4,COLLAUDO LDT,,,Da fare,p1,
+t5,COLLAUDO BU,,,Da fare,p1,
+t6,PRODUZIONE,,,Da fare,p1,
+t7,ADOPTION,,,Da fare,p1,
+t8,REQUISITI,2024-03-01,,In corso,p2,
+t9,TEMPI E STIME,,,Da fare,p2,
+t10,SVILUPPO,,,Da fare,p2,
+t11,COLLAUDO LDT,,,Da fare,p2,
+t12,COLLAUDO BU,,,Da fare,p2,
+t13,PRODUZIONE,,,Da fare,p2,
+t14,ADOPTION,,,Da fare,p2,
+_juq3ezf,REQUISITI,2026-04-28,2026-04-30,Completato,_7xqb4fk,
+_mcnx4d7,TEMPI E STIME,2026-05-01,,Da fare,_7xqb4fk,
+_25m0ncz,SVILUPPO,,,Da fare,_7xqb4fk,
+_tyxhvfe,COLLAUDO LDT,,,Da fare,_7xqb4fk,
+_rjw1v6z,COLLAUDO BU,,,Da fare,_7xqb4fk,
+_pdk2bg8,PRODUZIONE,,,Da fare,_7xqb4fk,
+_zv4hvzd,ADOPTION,,,Da fare,_7xqb4fk,
+_z5j2678,REQUISITI,2026-04-28,2026-05-07,Completato,_mgls32l,
+_r0gqlxw,TEMPI E STIME,2026-05-08,,Da fare,_mgls32l,
+_hwyjplp,SVILUPPO,,,Da fare,_mgls32l,
+_irhhf6y,COLLAUDO LDT,,,Da fare,_mgls32l,
+_ar0m20x,COLLAUDO BU,,,Da fare,_mgls32l,
+_5zomlls,PRODUZIONE,,,Da fare,_mgls32l,
+_ae18f4p,ADOPTION,,,Da fare,_mgls32l,
+_o2fsosq,REQUISITI,2026-05-05,,Da fare,_io7jtyz,
+_c62bxzv,TEMPI E STIME,,,Da fare,_io7jtyz,
+_jyhc1l0,SVILUPPO,,,Da fare,_io7jtyz,
+_pb1x1fz,COLLAUDO LDT,,,Da fare,_io7jtyz,
+_pm4tme1,COLLAUDO BU,,,Da fare,_io7jtyz,
+_tr012ro,PRODUZIONE,,,Da fare,_io7jtyz,
+_8609rob,ADOPTION,,,Da fare,_io7jtyz,
+_a6dpq0v,REQUISITI,2026-05-05,,Da fare,_x37bu8h,
+_0f3rk87,TEMPI E STIME,,,Da fare,_x37bu8h,
+_xr8i42a,SVILUPPO,,,Da fare,_x37bu8h,
+_os1ad0f,COLLAUDO LDT,,,Da fare,_x37bu8h,
+_7r175i9,COLLAUDO BU,,,Da fare,_x37bu8h,
+_444nop8,PRODUZIONE,,,Da fare,_x37bu8h,
+_lk32ywk,ADOPTION,,,Da fare,_x37bu8h,
+_662ahul,REQUISITI,2026-05-05,,Da fare,_aggde8o,
+_y043cow,TEMPI E STIME,,,Da fare,_aggde8o,
+_llwx521,SVILUPPO,,,Da fare,_aggde8o,
+_ekx7jl6,COLLAUDO LDT,,,Da fare,_aggde8o,
+_dmkkekk,COLLAUDO BU,,,Da fare,_aggde8o,
+_pbexzsc,PRODUZIONE,,,Da fare,_aggde8o,
+_kim2i3g,ADOPTION,,,Da fare,_aggde8o,
+_nu21l0i,REQUISITI,2026-05-15,,Da fare,_hl734yr,3
+_egbrirt,TEMPI E STIME,,,Da fare,_hl734yr,1
+_ipxs23p,SVILUPPO,,,Da fare,_hl734yr,2
+_q5jm615,COLLAUDO LDT,,,Da fare,_hl734yr,2
+_6pqf630,COLLAUDO BU,,,Da fare,_hl734yr,1
+_5w4k207,PRODUZIONE,,,Da fare,_hl734yr,2
+_lfc1lsf,ADOPTION,,,Da fare,_hl734yr,1
