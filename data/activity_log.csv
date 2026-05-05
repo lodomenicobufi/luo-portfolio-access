@@ -1,4 +1,5 @@
 id,timestamp,userId,action,entityType,entityId,entityName,projectId,projectName,field,oldValue,newValue,note
+log-1777998287793,2026-05-05T16:24:47.447Z,u1,update,project,_hl734yr,Test progetto,_hl734yr,Test progetto,dataInizio,2026-05-15,2026-04-30,
 log-1777997338343,2026-05-05T16:08:57.963Z,u1,accept,richiesta,req-1777997320131,ddd,_aggde8o,ddd,,,Accettata,
 log-1777997321811,2026-05-05T16:08:41.366Z,u1,create,richiesta,req-1777997320131,ddd,,,,,,dddd
 log-1777997225679,2026-05-05T16:07:05.302Z,u1,accept,richiesta,req-1777997207985,trip,_x37bu8h,trip,,,Accettata,
