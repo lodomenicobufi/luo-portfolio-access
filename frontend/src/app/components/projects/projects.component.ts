@@ -113,9 +113,18 @@ import { Project, User, AppConfig } from '../../core/models';
       <div class="mb" (click)="$event.target === $event.currentTarget && closeModal()">
         <div class="modal">
           <div class="mh">
-            <span class="mt">{{ editingProject ? 'Modifica progetto' : 'Nuovo progetto' }}</span>
+            <div>
+              @if (!editingProject) {
+                <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">
+                  Passo {{ modalStep() }} di 2
+                </div>
+              }
+              <span class="mt">{{ editingProject ? 'Modifica progetto' : (modalStep() === 1 ? 'Nuovo progetto' : 'Durata prevista dei task') }}</span>
+            </div>
             <button class="ico-btn" (click)="closeModal()">✕</button>
           </div>
+
+          @if (modalStep() === 1) {
           <div class="mbody">
             <div class="fg">
               <label class="fl req">Nome</label>
@@ -194,10 +203,53 @@ import { Project, User, AppConfig } from '../../core/models';
           </div>
           <div class="mfoot">
             <button class="btn btn-g" (click)="closeModal()">Annulla</button>
+            @if (editingProject) {
+              <button class="btn btn-p" (click)="save()" [disabled]="saving() || !form.nome">
+                {{ saving() ? 'Salvataggio…' : 'Salva progetto' }}
+              </button>
+            } @else {
+              <button class="btn btn-p" (click)="modalStep.set(2)" [disabled]="!form.nome">
+                Avanti: durata task →
+              </button>
+            }
+          </div>
+          }
+
+          @if (modalStep() === 2) {
+          <div class="mbody">
+            <p style="font-size:13px;color:rgba(46,46,46,.6);margin:0 0 16px;line-height:1.5">
+              Imposta il numero di <strong>settimane previste</strong> per ciascun task.
+              Queste durate saranno visibili nel Gantt come barre previsionali.
+            </p>
+            <div class="settimane-grid">
+              @for (nome of TASK_SEQUENCE; track nome; let i = $index) {
+                <div class="settimane-row">
+                  <div class="settimane-num">{{ i + 1 }}</div>
+                  <div class="settimane-nome">{{ nome }}</div>
+                  <div class="settimane-input-wrap">
+                    <button class="settimane-btn" (click)="settimaneMap[nome] = Math.max(1, (settimaneMap[nome]||1) - 1)">−</button>
+                    <span class="settimane-val">{{ settimaneMap[nome] || 1 }}</span>
+                    <button class="settimane-btn" (click)="settimaneMap[nome] = (settimaneMap[nome]||1) + 1">+</button>
+                    <span class="settimane-unit">sett.</span>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="settimane-total">
+              Totale stimato: <strong>{{ totalSettimane() }} settimane</strong>
+              @if (form.dataInizio) {
+                &nbsp;·&nbsp; Fine prevista: <strong>{{ calcDataFineStimata() }}</strong>
+              }
+            </div>
+          </div>
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="modalStep.set(1)">← Indietro</button>
             <button class="btn btn-p" (click)="save()" [disabled]="saving()">
-              {{ saving() ? 'Salvataggio…' : 'Salva progetto' }}
+              {{ saving() ? 'Salvataggio…' : 'Crea progetto' }}
             </button>
           </div>
+          }
+
         </div>
       </div>
     }
@@ -217,6 +269,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
   loading = signal(false);
   saving = signal(false);
   showModal = signal(false);
+  modalStep = signal<1 | 2>(1); // step 1 = dati progetto, step 2 = settimane task
   projects = signal<Project[]>([]);
   users = signal<User[]>([]);
   config = signal<AppConfig | null>(null);
@@ -228,6 +281,29 @@ export class ProjectsComponent implements OnInit, OnDestroy {
   fPrio = '';
 
   form: Partial<Project> = {};
+  readonly TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+  settimaneMap: Record<string, number> = {};
+
+  private initSettimaneMap(): void {
+    const defaults: Record<string, number> = {
+      'REQUISITI': 1, 'TEMPI E STIME': 1, 'SVILUPPO': 2,
+      'COLLAUDO LDT': 1, 'COLLAUDO BU': 1, 'PRODUZIONE': 2, 'ADOPTION': 1
+    };
+    this.TASK_SEQUENCE.forEach(n => { this.settimaneMap[n] = defaults[n] ?? 1; });
+  }
+
+  Math = Math;
+
+  totalSettimane(): number {
+    return this.TASK_SEQUENCE.reduce((s, n) => s + (this.settimaneMap[n] || 1), 0);
+  }
+
+  calcDataFineStimata(): string {
+    if (!this.form.dataInizio) return '';
+    const d = new Date(this.form.dataInizio);
+    d.setDate(d.getDate() + this.totalSettimane() * 7);
+    return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  }
 
   statoColors: Record<string, string> = {
     'In corso':       '#6EC0AA',
@@ -283,10 +359,12 @@ export class ProjectsComponent implements OnInit, OnDestroy {
       priorita: cfg?.priorita[1] || 'Alta',
       repositoryUrl: ''
     };
+    this.initSettimaneMap();
+    this.modalStep.set(1);
     this.showModal.set(true);
   }
 
-  closeModal() { this.showModal.set(false); }
+  closeModal() { this.showModal.set(false); this.modalStep.set(1); }
 
   async save() {
     if (!this.form.nome) return;
@@ -297,7 +375,7 @@ export class ProjectsComponent implements OnInit, OnDestroy {
       } else {
         const created = await this.db.createProject(this.form as Omit<Project, 'id'>);
         const dataInizio = this.form.dataInizio || new Date().toISOString().split('T')[0];
-        await this.db.initProjectTasks(created.id, dataInizio);
+        await this.db.initProjectTasks(created.id, dataInizio, this.settimaneMap);
       }
       await this.load();
       this.closeModal();

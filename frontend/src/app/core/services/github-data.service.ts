@@ -200,7 +200,7 @@ export class GithubDataService {
   }
 
   async saveTasks(tasks: Task[]): Promise<void> {
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
     await this.writeFile('data/tasks.csv', this.toCsv(tasks, headers), 'Update tasks');
   }
 
@@ -333,8 +333,12 @@ export class GithubDataService {
   // ══════════════════════════════════════════════════════════════
   // TASK FISSI — inizializzazione alla creazione progetto
   // ══════════════════════════════════════════════════════════════
-  async initProjectTasks(projectId: string, dataInizioProgetto: string): Promise<void> {
+  async initProjectTasks(projectId: string, dataInizioProgetto: string, settimaneMap?: Record<string, number>): Promise<void> {
     const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const DEFAULT_SETTIMANE: Record<string, number> = {
+      'REQUISITI': 1, 'TEMPI E STIME': 1, 'SVILUPPO': 2,
+      'COLLAUDO LDT': 1, 'COLLAUDO BU': 1, 'PRODUZIONE': 2, 'ADOPTION': 1
+    };
     const allTasks = await this.getTasks();
     const existing = allTasks.filter(t => t.projectId === projectId);
     if (existing.length > 0) return;
@@ -345,9 +349,10 @@ export class GithubDataService {
       dataFine: '',
       stato: 'Da fare',
       projectId,
+      settimaneStimate: settimaneMap?.[nome] ?? DEFAULT_SETTIMANE[nome] ?? 1,
     }));
     const updated = [...allTasks, ...newTasks];
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
     await this.writeFile('data/tasks.csv', this.toCsv(updated, headers), 'Init tasks for project ' + projectId);
   }
 
@@ -381,7 +386,7 @@ export class GithubDataService {
       }
     }
 
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
     await this.writeFile('data/tasks.csv', this.toCsv(allTasks, headers), 'Update task ' + updatedTask.nome);
     return allTasks.filter(t => t.projectId === updatedTask.projectId);
   }
@@ -415,7 +420,7 @@ export class GithubDataService {
     if (idx >= 0) { all[idx] = { ...all[idx], ...updates }; await this.saveRichieste(all); }
   }
 
-  async accettaRichiesta(id: string, gestitaId: string, projects: Project[], users: User[], config: AppConfig, ownerOverride?: string, documentazione: 'parziale' | 'non necessaria' = 'parziale'): Promise<Project> {
+  async accettaRichiesta(id: string, gestitaId: string, projects: Project[], users: User[], config: AppConfig, ownerOverride?: string, documentazione: 'parziale' | 'non necessaria' = 'parziale', settimaneMap?: Record<string, number>): Promise<Project> {
     const all = await this.getRichieste();
     const r = all.find(r => r.id === id)!;
 
@@ -445,7 +450,7 @@ export class GithubDataService {
     });
 
     // Crea automaticamente tutti i task della sequenza
-    await this.initProjectTasks(newProject.id, today);
+    await this.initProjectTasks(newProject.id, today, settimaneMap);
 
     const idx = all.findIndex(r => r.id === id);
     all[idx] = { ...all[idx], stato: 'Accettata', dataEsito: today, gestitaId, progettoCreato: newProject.id };

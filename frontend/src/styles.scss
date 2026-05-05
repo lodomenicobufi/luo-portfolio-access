@@ -1520,3 +1520,89 @@ select.fi {
   .reports-grid { grid-template-columns: 1fr; }
   .search-fake { display: none; }
 }
+
+/* ── GANTT DUAL-BAR ──────────────────────────────────── */
+.gantt-row { position: relative; }
+
+/* Barra previsionale grigia (sfondo) */
+.gantt-bar-forecast {
+  position: absolute; top: 8px; height: 14px;
+  background: #C8D0D8; border-radius: 4px; opacity: 0.85;
+  z-index: 1; pointer-events: all; cursor: default;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+
+/* Barra consuntivata (sovrapposta) */
+.gantt-bar-actual {
+  position: absolute; top: 8px; height: 14px;
+  border-radius: 4px; z-index: 2;
+  display: flex; align-items: center; overflow: hidden;
+  white-space: nowrap; padding: 0 6px;
+}
+.gantt-bar-early  { background: #6EC0AA; border: 1px solid #4fa890; }
+.gantt-bar-late   { background: #E89B8A; border: 1px solid #c97a6a; }
+
+/* Barra in corso */
+.gantt-bar-active {
+  position: absolute; top: 8px; height: 14px;
+  background: #7EB8DA; border: 1px solid #5a9fc0;
+  border-radius: 4px; z-index: 2;
+  display: flex; align-items: center; overflow: hidden;
+  white-space: nowrap; padding: 0 6px;
+}
+
+/* Legenda Gantt */
+.gantt-legend {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+}
+.gantt-legend-item {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: rgba(46,46,46,0.6); font-weight: 500;
+}
+.gantt-legend-dot {
+  width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0;
+}
+
+/* ── STEP SETTIMANE TASK ─────────────────────────────── */
+.settimane-grid {
+  display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px;
+}
+.settimane-row {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg); border: var(--bd); border-radius: var(--r-sm);
+  padding: 8px 12px;
+}
+.settimane-num {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(110,192,170,0.15); color: var(--mint-dd);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.settimane-nome {
+  flex: 1; font-size: 13px; font-weight: 600; color: var(--ink);
+}
+.settimane-input-wrap {
+  display: flex; align-items: center; gap: 6px;
+}
+.settimane-btn {
+  width: 26px; height: 26px; border-radius: 6px;
+  background: rgba(110,192,170,0.12); color: var(--mint-dd);
+  border: 1px solid rgba(110,192,170,0.3);
+  font-size: 16px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1; transition: background 0.15s;
+  &:hover { background: rgba(110,192,170,0.25); }
+}
+.settimane-val {
+  min-width: 28px; text-align: center;
+  font-size: 15px; font-weight: 700; color: var(--ink);
+}
+.settimane-unit {
+  font-size: 11px; color: rgba(46,46,46,0.45); min-width: 28px;
+}
+.settimane-total {
+  font-size: 13px; color: rgba(46,46,46,0.6);
+  background: rgba(110,192,170,0.06); border: 1px solid rgba(110,192,170,0.2);
+  border-radius: var(--r-sm); padding: 8px 12px;
+  strong { color: var(--mint-dd); }
+}

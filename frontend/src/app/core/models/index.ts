@@ -33,6 +33,7 @@ export interface Task {
   dataFine: string;
   stato: string;
   projectId: string;
+  settimaneStimate: number; // settimane previsionali inserite alla creazione
 }
 
 export interface ChecklistItem {

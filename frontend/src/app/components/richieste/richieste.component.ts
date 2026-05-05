@@ -158,9 +158,16 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
       <div class="mb" (click)="$event.target === $event.currentTarget && closeModal()">
         <div class="modal">
           <div class="mh">
-            <span class="mt">Accetta richiesta</span>
+            <div>
+              <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">
+                Passo {{ accettaStep() }} di 2
+              </div>
+              <span class="mt">{{ accettaStep() === 1 ? 'Accetta richiesta' : 'Durata prevista dei task' }}</span>
+            </div>
             <button class="ico-btn" (click)="closeModal()">✕</button>
           </div>
+
+          @if (accettaStep() === 1) {
           <div class="mbody">
             <div class="req-info-section">
               <div class="sec-div">Richiesta</div>
@@ -224,22 +231,48 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                 </div>
                 <div class="fg"></div>
               </div>
-              <div class="fg">
-                <label class="fl">Task creati automaticamente</label>
-                <div class="req-task-chips">
-                  @for (t of taskSequence; track t) {
-                    <span class="req-task-chip">{{ t }}</span>
-                  }
-                </div>
-              </div>
             </div>
           </div>
           <div class="mfoot">
             <button class="btn btn-g" (click)="closeModal()">Annulla</button>
+            <button class="btn btn-p" (click)="accettaStep.set(2)">
+              Avanti: durata task →
+            </button>
+          </div>
+          }
+
+          @if (accettaStep() === 2) {
+          <div class="mbody">
+            <p style="font-size:13px;color:rgba(46,46,46,.6);margin:0 0 16px;line-height:1.5">
+              Imposta il numero di <strong>settimane previste</strong> per ciascun task.
+              Queste durate saranno visibili nel Gantt come barre previsionali.
+            </p>
+            <div class="settimane-grid">
+              @for (nome of TASK_SEQUENCE_REQ; track nome; let i = $index) {
+                <div class="settimane-row">
+                  <div class="settimane-num">{{ i + 1 }}</div>
+                  <div class="settimane-nome">{{ nome }}</div>
+                  <div class="settimane-input-wrap">
+                    <button class="settimane-btn" (click)="settimaneMapReq[nome] = Math.max(1, (settimaneMapReq[nome]||1) - 1)">−</button>
+                    <span class="settimane-val">{{ settimaneMapReq[nome] || 1 }}</span>
+                    <button class="settimane-btn" (click)="settimaneMapReq[nome] = (settimaneMapReq[nome]||1) + 1">+</button>
+                    <span class="settimane-unit">sett.</span>
+                  </div>
+                </div>
+              }
+            </div>
+            <div class="settimane-total">
+              Totale stimato: <strong>{{ totalSettimaneReq() }} settimane</strong>
+            </div>
+          </div>
+          <div class="mfoot">
+            <button class="btn btn-g" (click)="accettaStep.set(1)">← Indietro</button>
             <button class="btn btn-p" (click)="submitAccetta()" [disabled]="saving()">
               {{ saving() ? 'Elaborazione…' : '✓ Conferma accettazione' }}
             </button>
           </div>
+          }
+
         </div>
       </div>
     }
@@ -359,6 +392,23 @@ export class RichiesteComponent implements OnInit {
   form = { titolo: '', descrizione: '', buRiferimento: '', progettoRiferimento: '' };
   accettaForm = { owner: '', documentazione: 'parziale' as 'parziale' | 'non necessaria' };
   postForm = { area: '', fornitore: '', documentazione: 'parziale' };
+  accettaStep = signal<1 | 2>(1);
+
+  Math = Math;
+  readonly TASK_SEQUENCE_REQ = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+  settimaneMapReq: Record<string, number> = {};
+
+  private initSettimaneMapReq(): void {
+    const defaults: Record<string, number> = {
+      'REQUISITI': 1, 'TEMPI E STIME': 1, 'SVILUPPO': 2,
+      'COLLAUDO LDT': 1, 'COLLAUDO BU': 1, 'PRODUZIONE': 2, 'ADOPTION': 1
+    };
+    this.TASK_SEQUENCE_REQ.forEach(n => { this.settimaneMapReq[n] = defaults[n] ?? 1; });
+  }
+
+  totalSettimaneReq(): number {
+    return this.TASK_SEQUENCE_REQ.reduce((s, n) => s + (this.settimaneMapReq[n] || 1), 0);
+  }
 
   readonly taskSequence = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
 
@@ -396,6 +446,8 @@ export class RichiesteComponent implements OnInit {
   openAccetta(r: Richiesta) {
     this.selectedReq.set(r);
     this.accettaForm = { owner: this.currentUserId(), documentazione: 'parziale' };
+    this.initSettimaneMapReq();
+    this.accettaStep.set(1);
     this.modal.set('accetta');
   }
   openRespingi(r: Richiesta) { this.selectedReq.set(r); this.noteRespinta = ''; this.modal.set('respingi'); }
@@ -432,7 +484,7 @@ export class RichiesteComponent implements OnInit {
     try {
       const newProj = await this.db.accettaRichiesta(
         r.id, this.currentUserId(), this.projects(), this.users(), this.config()!,
-        this.accettaForm.owner, this.accettaForm.documentazione
+        this.accettaForm.owner, this.accettaForm.documentazione, this.settimaneMapReq
       );
       await this.db.logAction({
         userId: this.currentUserId(), action: 'accept', entityType: 'richiesta',

@@ -507,6 +507,11 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               <div class="card-eyebrow">Pianificazione</div>
               <div class="card-title">Gantt dei task</div>
             </div>
+            <div class="gantt-legend">
+              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#C8D0D8"></span>Previsionale</span>
+              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#6EC0AA"></span>Completato in anticipo</span>
+              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E89B8A"></span>Completato in ritardo</span>
+            </div>
           </div>
           <div class="gantt-wrap">
             <div class="gantt-labels">
@@ -532,14 +537,31 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     <div class="gantt-cell" [style.width.px]="ganttDayW"
                       [style.background]="col.isMonday ? 'rgba(110,192,170,0.04)' : ''"></div>
                   }
-                  <div class="gantt-bar"
-                    [class.gantt-bar-done]="t.stato==='Completato'"
-                    [class.gantt-bar-active]="t.stato==='In corso'"
-                    [class.gantt-bar-todo]="t.stato==='Da fare'"
-                    [style.left.px]="ganttBarLeft(t)"
-                    [style.width.px]="ganttBarWidth(t)">
-                    <span class="gantt-bar-label">{{ t.nome }}</span>
+                  <!-- Barra PREVISIONALE (sempre grigia) -->
+                  <div class="gantt-bar gantt-bar-forecast"
+                    [style.left.px]="ganttForecastLeft(t)"
+                    [style.width.px]="ganttForecastWidth(t)"
+                    [title]="'Previsionale: ' + ganttForecastLabel(t)">
                   </div>
+                  <!-- Barra CONSUNTIVATA (solo se completato, verde/rossa) -->
+                  @if (t.stato === 'Completato' && t.dataInizio && t.dataFine) {
+                    <div class="gantt-bar gantt-bar-actual"
+                      [class.gantt-bar-early]="isEarly(t)"
+                      [class.gantt-bar-late]="!isEarly(t)"
+                      [style.left.px]="ganttBarLeft(t)"
+                      [style.width.px]="ganttBarWidth(t)"
+                      [title]="'Consuntivato: ' + fmtDate(t.dataInizio) + ' → ' + fmtDate(t.dataFine)">
+                      <span class="gantt-bar-label">{{ t.nome }}</span>
+                    </div>
+                  }
+                  <!-- Barra IN CORSO (blu, usa date reali) -->
+                  @if (t.stato === 'In corso' && t.dataInizio) {
+                    <div class="gantt-bar gantt-bar-active"
+                      [style.left.px]="ganttBarLeft(t)"
+                      [style.width.px]="ganttBarWidthInProgress(t)">
+                      <span class="gantt-bar-label">{{ t.nome }}</span>
+                    </div>
+                  }
                 </div>
               }
             </div>
@@ -633,10 +655,6 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const available = this.ganttContainerW() - this.ganttLabelW;
     return Math.max(14, Math.floor(available / cols));
   }
-  readonly TASK_DURATIONS: Record<string, number> = {
-    'REQUISITI': 7, 'TEMPI E STIME': 7, 'SVILUPPO': 15,
-    'COLLAUDO LDT': 7, 'COLLAUDO BU': 7, 'PRODUZIONE': 15, 'ADOPTION': 7
-  };
 
   // ── BU panel ─────────────────────────────────────────
   sameBuProjects = computed(() => {
@@ -686,13 +704,13 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   ganttEnd = computed(() => {
     const start = this.ganttStart();
     const tasks = this.tasks();
-    const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    // Fine previsionale: somma settimaneStimate di tutti i task
     let totalDays = 0;
-    TASK_SEQUENCE.forEach(name => { totalDays += this.TASK_DURATIONS[name] || 7; });
-    // Use real end dates if available
+    tasks.forEach(t => totalDays += (t.settimaneStimate || 1) * 7);
+    const forecastEnd = new Date(start.getTime() + totalDays * 86400000);
+    // Estendi se ci sono date reali oltre la previsione
     const realEnds = tasks.map(t => t.dataFine).filter(Boolean).map(d => new Date(d));
-    const theoreticalEnd = new Date(start.getTime() + totalDays * 86400000);
-    return realEnds.length ? new Date(Math.max(theoreticalEnd.getTime(), ...realEnds.map(d => d.getTime()))) : theoreticalEnd;
+    return realEnds.length ? new Date(Math.max(forecastEnd.getTime(), ...realEnds.map(d => d.getTime()))) : forecastEnd;
   });
 
   ganttColumns = computed(() => {
@@ -713,28 +731,79 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return cols;
   });
 
+  // Posizione barra previsionale: cumulato delle settimane precedenti
+  ganttForecastLeft(t: Task): number {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
+    const idx = SEQUENCE.indexOf(t.nome);
+    const tasks = this.tasks();
+    let offset = 0;
+    for (let i = 0; i < idx; i++) {
+      const prev = tasks.find(x => x.nome === SEQUENCE[i]);
+      offset += (prev?.settimaneStimate || 1) * 7;
+    }
+    return offset * this.ganttDayW;
+  }
+
+  // Larghezza barra previsionale in base alle settimane stimate
+  ganttForecastWidth(t: Task): number {
+    return (t.settimaneStimate || 1) * 7 * this.ganttDayW;
+  }
+
+  ganttForecastLabel(t: Task): string {
+    const start = this.ganttStart();
+    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
+    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
+    const s = new Date(start.getTime() + leftDays * 86400000);
+    const e = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
+    return this.fmtDate(s.toISOString().split('T')[0]) + ' → ' + this.fmtDate(e.toISOString().split('T')[0]);
+  }
+
+  // Posizione barra consuntivata (usa dataInizio reale)
   ganttBarLeft(t: Task): number {
     const start = this.ganttStart();
-    const taskStart = t.dataInizio ? new Date(t.dataInizio) : this.calcTheoreticalStart(t);
+    const taskStart = t.dataInizio ? new Date(t.dataInizio) : start;
     const diff = Math.floor((taskStart.getTime() - start.getTime()) / 86400000);
     return Math.max(0, diff) * this.ganttDayW;
   }
 
+  // Larghezza barra consuntivata (dataInizio → dataFine reali)
   ganttBarWidth(t: Task): number {
     if (t.dataInizio && t.dataFine) {
       const s = new Date(t.dataInizio); const e = new Date(t.dataFine);
       const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
       return days * this.ganttDayW;
     }
-    return (this.TASK_DURATIONS[t.nome] || 7) * this.ganttDayW;
+    return (t.settimaneStimate || 1) * 7 * this.ganttDayW;
+  }
+
+  // Larghezza barra "in corso" (da dataInizio a oggi)
+  ganttBarWidthInProgress(t: Task): number {
+    const s = new Date(t.dataInizio || new Date());
+    const e = new Date();
+    const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
+    return days * this.ganttDayW;
+  }
+
+  // Completato prima della fine previsionale?
+  isEarly(t: Task): boolean {
+    if (!t.dataFine) return false;
+    const start = this.ganttStart();
+    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
+    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
+    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
+    return new Date(t.dataFine) <= forecastEnd;
   }
 
   calcTheoreticalStart(t: Task): Date {
     const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const idx = SEQUENCE.indexOf(t.nome);
+    const tasks = this.tasks();
     const start = this.ganttStart();
     let offset = 0;
-    for (let i = 0; i < idx; i++) offset += this.TASK_DURATIONS[SEQUENCE[i]] || 7;
+    for (let i = 0; i < idx; i++) {
+      const prev = tasks.find(x => x.nome === SEQUENCE[i]);
+      offset += (prev?.settimaneStimate || 1) * 7;
+    }
     return new Date(start.getTime() + offset * 86400000);
   }
 
