@@ -568,6 +568,40 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         </div>
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
+
+        <!-- ══ MODAL CONFERMA CAMBIO DATA INIZIO ══ -->
+        @if (confirmDataInizio()) {
+          <div class="mb">
+            <div class="modal" style="max-width:440px">
+              <div class="mh">
+                <div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--warning);margin-bottom:2px">Attenzione</div>
+                  <span class="mt">Aggiorna la data del primo task?</span>
+                </div>
+              </div>
+              <div class="mbody">
+                <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 16px;line-height:1.6">
+                  Hai modificato la <strong>data di inizio progetto</strong> al
+                  <strong>{{ fmtDate(editForm.dataInizio || '') }}</strong>.<br>
+                  Vuoi allineare anche la data di inizio del task
+                  <strong>REQUISITI</strong> alla nuova data?
+                </p>
+                <div style="background:rgba(110,192,170,0.06);border:1px solid rgba(110,192,170,0.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:rgba(46,46,46,.6)">
+                  Il task REQUISITI è sempre il punto di partenza della pianificazione.
+                  Aggiornarlo garantisce che il Gantt previsionale rimanga allineato.
+                </div>
+              </div>
+              <div class="mfoot">
+                <button class="btn btn-g" (click)="saveProject(false)">
+                  No, solo il progetto
+                </button>
+                <button class="btn btn-p" (click)="saveProject(true)" [disabled]="saving()">
+                  {{ saving() ? 'Salvataggio…' : 'Sì, aggiorna anche il task' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        }
       }
     </div>
   `,
@@ -868,11 +902,36 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   ticketBadge(s: string): string { const m: Record<string,string>={'Aperto':'bb','In lavorazione':'bo','Risolto':'bg','Chiuso':'bgr'}; return 'badge '+(m[s]||'bgr'); }
   showToast(msg: string) { this.toast.set(msg); setTimeout(() => this.toast.set(''), 3000); }
 
-  async saveProject() {
+  confirmDataInizio = signal(false); // mostra il mini-modal di conferma cambio data inizio
+
+  async saveProject(updateFirstTask?: boolean) {
     if (!this.project()) return;
-    this.saving.set(true);
+
+    // Se la data inizio è cambiata e non abbiamo ancora chiesto conferma, apri il modal
     const old = this.project()!;
+    const dataInizioChanged = this.editForm.dataInizio && this.editForm.dataInizio !== old.dataInizio;
+    const firstTask = this.tasks().find(t => t.nome === 'REQUISITI');
+    const firstTaskHasNoRealStart = !firstTask?.dataInizio || firstTask.dataInizio === old.dataInizio;
+
+    if (dataInizioChanged && firstTask && firstTaskHasNoRealStart && updateFirstTask === undefined) {
+      this.confirmDataInizio.set(true);
+      return;
+    }
+
+    this.confirmDataInizio.set(false);
+    this.saving.set(true);
+
     await this.db.updateProject(old.id, this.editForm as Project);
+
+    // Se confermato, aggiorna la dataInizio del primo task (REQUISITI)
+    if (updateFirstTask && firstTask && this.editForm.dataInizio) {
+      const updatedTasks = await this.db.updateTaskWithCascade(
+        firstTask.id, { dataInizio: this.editForm.dataInizio }, this.tasks()
+      );
+      this.tasks.set(updatedTasks);
+      updatedTasks.forEach(t => { this.initNewSubTask(t.id); });
+    }
+
     // Log campi modificati
     const uid = this.auth.currentUser()?.id || '';
     const changedFields = Object.keys(this.editForm).filter(k =>
