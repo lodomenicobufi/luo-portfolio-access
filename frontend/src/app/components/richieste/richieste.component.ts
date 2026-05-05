@@ -192,8 +192,12 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                   <input class="fi" [value]="selectedReq()?.titolo || ''" disabled />
                 </div>
                 <div class="fg">
-                  <label class="fl">Owner</label>
-                  <input class="fi" [value]="userName(currentUserId())" disabled />
+                  <label class="fl req">Owner</label>
+                  <select class="fi" [(ngModel)]="accettaForm.owner">
+                    @for (u of users(); track u.id) {
+                      <option [value]="u.id">{{ u.name }}</option>
+                    }
+                  </select>
                 </div>
               </div>
               <div class="fr3">
@@ -209,6 +213,16 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                   <label class="fl">Data avvio</label>
                   <input class="fi" [value]="todayIso()" disabled />
                 </div>
+              </div>
+              <div class="fr2">
+                <div class="fg">
+                  <label class="fl req">Documentazione</label>
+                  <select class="fi" [(ngModel)]="accettaForm.documentazione">
+                    <option value="parziale">Parziale</option>
+                    <option value="non necessaria">Non necessaria</option>
+                  </select>
+                </div>
+                <div class="fg"></div>
               </div>
               <div class="fg">
                 <label class="fl">Task creati automaticamente</label>
@@ -308,7 +322,6 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                 <label class="fl">Documentazione</label>
                 <select class="fi" [(ngModel)]="postForm.documentazione">
                   <option value="parziale">Parziale</option>
-                  <option value="totale">Totale</option>
                   <option value="non necessaria">Non necessaria</option>
                 </select>
               </div>
@@ -344,6 +357,7 @@ export class RichiesteComponent implements OnInit {
   filtroStato  = '';
   noteRespinta = '';
   form = { titolo: '', descrizione: '', buRiferimento: '', progettoRiferimento: '' };
+  accettaForm = { owner: '', documentazione: 'parziale' as 'parziale' | 'non necessaria' };
   postForm = { area: '', fornitore: '', documentazione: 'parziale' };
 
   readonly taskSequence = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
@@ -379,7 +393,11 @@ export class RichiesteComponent implements OnInit {
     this.form = { titolo: '', descrizione: '', buRiferimento: '', progettoRiferimento: '' };
     this.modal.set('nuova');
   }
-  openAccetta(r: Richiesta) { this.selectedReq.set(r); this.modal.set('accetta'); }
+  openAccetta(r: Richiesta) {
+    this.selectedReq.set(r);
+    this.accettaForm = { owner: this.currentUserId(), documentazione: 'parziale' };
+    this.modal.set('accetta');
+  }
   openRespingi(r: Richiesta) { this.selectedReq.set(r); this.noteRespinta = ''; this.modal.set('respingi'); }
   closeModal() {
     if (this.modal() === 'post-accetta') return;
@@ -413,7 +431,8 @@ export class RichiesteComponent implements OnInit {
     this.saving.set(true);
     try {
       const newProj = await this.db.accettaRichiesta(
-        r.id, this.currentUserId(), this.projects(), this.users(), this.config()!
+        r.id, this.currentUserId(), this.projects(), this.users(), this.config()!,
+        this.accettaForm.owner, this.accettaForm.documentazione
       );
       await this.db.logAction({
         userId: this.currentUserId(), action: 'accept', entityType: 'richiesta',
@@ -422,7 +441,7 @@ export class RichiesteComponent implements OnInit {
         newValue: 'Accettata',
       });
       this.createdProject.set(newProj);
-      this.postForm = { area: '', fornitore: '', documentazione: 'parziale' };
+      this.postForm = { area: '', fornitore: '', documentazione: this.accettaForm.documentazione };
       await this.load();
       this.modal.set('post-accetta');
     } finally { this.saving.set(false); }

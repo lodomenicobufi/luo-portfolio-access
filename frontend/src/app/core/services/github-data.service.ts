@@ -415,7 +415,7 @@ export class GithubDataService {
     if (idx >= 0) { all[idx] = { ...all[idx], ...updates }; await this.saveRichieste(all); }
   }
 
-  async accettaRichiesta(id: string, gestitaId: string, projects: Project[], users: User[], config: AppConfig): Promise<Project> {
+  async accettaRichiesta(id: string, gestitaId: string, projects: Project[], users: User[], config: AppConfig, ownerOverride?: string, documentazione: 'parziale' | 'non necessaria' = 'parziale'): Promise<Project> {
     const all = await this.getRichieste();
     const r = all.find(r => r.id === id)!;
 
@@ -434,12 +434,12 @@ export class GithubDataService {
       area: '',
       businessUnit: r.buRiferimento,
       fornitore: '',
-      owner: gestitaId,
+      owner: ownerOverride || gestitaId,
       stato: 'Pianificazione',
       dataInizio: today,
       dataFine: '',
       completamento: 0,
-      documentazione: 'parziale',
+      documentazione,
       priorita: 'Media',
       repositoryUrl: '',
     });
