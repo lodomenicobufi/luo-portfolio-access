@@ -85,7 +85,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         <!-- RIGA 1: anagrafica (metà) + pannello BU (metà) -->
         <!-- RIGA 1: Progetti stessa BU (full width) -->
-        <div class="card" style="margin-bottom:16px">
+        <div class="card">
           <div class="card-hdr">
             <div>
               <div class="card-eyebrow">Progetti stessa BU · {{ project()!.businessUnit }}</div>
@@ -114,7 +114,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         <!-- RIGA 2: Anagrafica progetto (full width) -->
         @if (editMode()) {
-          <div class="card" style="margin-bottom:16px">
+          <div class="card">
             <div class="sec-div">Modifica Progetto</div>
 
             <!-- Campi base: tutti gli editor -->
@@ -188,7 +188,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         }
         @if (!editMode()) {
-          <div class="card detail-grid" style="margin-bottom:16px">
+          <div class="card detail-grid">
             <div><div class="dl">Stato</div>
               <span class="badge" [class]="statoBadge(project()!.stato)">
                 <span class="badge-dot" [style.background]="statoColor(project()!.stato)"></span>
