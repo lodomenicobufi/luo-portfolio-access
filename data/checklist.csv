@@ -1,5 +1,5 @@
-id,documento,completato,linkUrl,projectId
-c4,Analisi dei requisiti,true,,p2
-c5,Documento di progetto,false,,p2
-_8mp1x4o,Analisi dei requisiti,true,,p1
-_ztjbk2r,Documento di progetto,true,,p1
+id,documento,completato,linkUrl,projectId,nonNecessario
+c4,Analisi dei requisiti,true,,p2,false
+c5,Documento di progetto,false,,p2,false
+_8mp1x4o,Analisi dei requisiti,true,,p1,false
+_ztjbk2r,Documento di progetto,true,,p1,false

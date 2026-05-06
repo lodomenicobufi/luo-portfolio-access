@@ -21,7 +21,7 @@ export interface Project {
   dataInizio: string;
   dataFine: string;
   completamento: number;
-  documentazione: 'parziale' | 'totale' | 'non necessaria';
+  documentazione: 'parziale' | 'totale' | 'non necessaria' | 'completata';
   priorita: string;
   repositoryUrl: string;
 }
@@ -42,6 +42,25 @@ export interface ChecklistItem {
   completato: boolean;
   linkUrl: string;
   projectId: string;
+  nonNecessario: boolean;
+}
+
+export interface Project {
+  id: string;
+  nome: string;
+  descrizione: string;
+  tipologia: string;
+  area: string;
+  businessUnit: string;
+  fornitore: string;
+  owner: string;
+  stato: string;
+  dataInizio: string;
+  dataFine: string;
+  completamento: number;
+  documentazione: 'parziale' | 'totale' | 'non necessaria' | 'completata';
+  priorita: string;
+  repositoryUrl: string;
 }
 
 export interface Ticket {

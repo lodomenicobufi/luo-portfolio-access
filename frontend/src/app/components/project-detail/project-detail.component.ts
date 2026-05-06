@@ -135,10 +135,22 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                   @for (v of config()?.priorita||[]; track v){ <option>{{v}}</option> }
                 </select></div>
             </div>
-            <div class="fg"><label class="fl">Documentazione</label>
-              <select class="fi" [(ngModel)]="editForm.documentazione">
-                <option>parziale</option><option>totale</option><option>non necessaria</option>
-              </select></div>
+            <div class="fg">
+              <label class="fl">Documentazione</label>
+              @if (project()?.documentazione === 'completata' && !auth.isEditor) {
+                <span class="badge badge-doc-completata">✓ Completata (automatica)</span>
+              } @else {
+                <select class="fi" [(ngModel)]="editForm.documentazione">
+                  <option value="parziale">Parziale</option>
+                  <option value="non necessaria">Non necessaria</option>
+                </select>
+                @if (project()?.documentazione === 'completata') {
+                  <div style="font-size:11px;color:var(--warning);margin-top:4px">
+                    ⚠ Stai modificando uno stato impostato automaticamente dalla checklist
+                  </div>
+                }
+              }
+            </div>
 
             <!-- Campi riservati admin -->
             @if (auth.isAdmin) {
@@ -255,18 +267,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
-            @if (tasks().length === 0) {
-              <div class="task-empty-state">
-                <div class="task-empty-icon">📋</div>
-                <div class="task-empty-title">Nessun task trovato</div>
-                <div class="task-empty-desc">
-                  I task non sono stati generati automaticamente o il progetto è stato importato senza di essi.
-                </div>
-                <button class="btn btn-p" (click)="generateTasks()" [disabled]="saving()">
-                  {{ saving() ? 'Generazione in corso…' : '⚡ Genera task' }}
-                </button>
-              </div>
-            }
             @for (t of tasks(); track t.id) {
               <div class="task-block" [class.task-locked]="isTaskLocked(t)" [class.task-done]="t.stato==='Completato'">
                 <div class="task-block-header" (click)="toggleTaskExpand(t.id)">
@@ -301,8 +301,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                         <input class="fi" type="date" [value]="t.dataInizio" disabled/></div>
                       <div class="fg"><label class="fl">Data Fine</label>
                         @if (auth.isEditor && !isTaskLocked(t)) {
-                          <input class="fi" type="date" [(ngModel)]="t.dataFine"
-                            (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"/>
+                          <input class="fi" type="date" [(ngModel)]="t.dataFine" (change)="updateTaskCascade(t)"/>
                         } @else {
                           <input class="fi" type="date" [value]="t.dataFine" disabled/>
                         }
@@ -437,38 +436,53 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           <div class="card tab-card" style="padding:0;overflow:hidden">
             <div class="chk-list">
               @for (doc of config()?.docFields||[]; track doc) {
-                <div class="chk-row" [class.chk-row-done]="getChecklistEntry(doc)?.completato">
+                <div class="chk-row"
+                  [class.chk-row-done]="getChecklistEntry(doc)?.completato"
+                  [class.chk-row-nn]="getChecklistEntry(doc)?.nonNecessario">
                   <div class="chk-row-left">
                     <input type="checkbox"
                       [checked]="getChecklistEntry(doc)?.completato"
                       (change)="toggleChecklist(doc, getChecklistEntry(doc))"
-                      [disabled]="!auth.isEditor"
+                      [disabled]="!auth.isEditor || !!getChecklistEntry(doc)?.nonNecessario"
                       class="chk-box" />
-                    <span class="chk-row-label" [class.chk-label-done]="getChecklistEntry(doc)?.completato">
+                    <span class="chk-row-label"
+                      [class.chk-label-done]="getChecklistEntry(doc)?.completato"
+                      [class.chk-label-nn]="getChecklistEntry(doc)?.nonNecessario">
                       {{ doc }}
                     </span>
+                    @if (getChecklistEntry(doc)?.nonNecessario) {
+                      <span class="chk-badge-nn">Non necessario</span>
+                    }
                   </div>
 
                   <div class="chk-row-right">
-                    @if (getChecklistEntry(doc)?.linkUrl) {
-                      <!-- Link già presente: bottone compatto verde -->
-                      <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank" class="btn-doc-view">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        Documento
-                      </a>
-                      @if (auth.isEditor) {
-                        <button class="btn-doc-edit" (click)="openLinkEdit(doc)" title="Modifica link">
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    @if (!getChecklistEntry(doc)?.nonNecessario) {
+                      @if (getChecklistEntry(doc)?.linkUrl) {
+                        <a [href]="getChecklistEntry(doc)!.linkUrl" target="_blank" class="btn-doc-view">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                          Documento
+                        </a>
+                        @if (auth.isEditor) {
+                          <button class="btn-doc-edit" (click)="openLinkEdit(doc)" title="Modifica link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                        }
+                      } @else if (auth.isEditor) {
+                        <button class="btn-doc-insert" (click)="openLinkEdit(doc)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                          Inserisci link
                         </button>
+                      } @else {
+                        <span class="chk-no-doc">—</span>
                       }
-                    } @else if (auth.isEditor) {
-                      <!-- Nessun link: pulsante inserisci -->
-                      <button class="btn-doc-insert" (click)="openLinkEdit(doc)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                        Inserisci link
+                    }
+                    @if (auth.isEditor) {
+                      <button class="btn-nn"
+                        [class.btn-nn-active]="getChecklistEntry(doc)?.nonNecessario"
+                        (click)="toggleNonNecessario(doc, getChecklistEntry(doc))"
+                        [title]="getChecklistEntry(doc)?.nonNecessario ? 'Rimuovi flag non necessario' : 'Segna come non necessario'">
+                        {{ getChecklistEntry(doc)?.nonNecessario ? '↩ Ripristina' : 'Non necessario' }}
                       </button>
-                    } @else {
-                      <span class="chk-no-doc">—</span>
                     }
                   </div>
                 </div>
@@ -478,7 +492,14 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               <div class="chk-footer-bar">
                 <div class="chk-footer-fill" [style.width.%]="(completatiCount() / (config()?.docFields?.length||1)) * 100"></div>
               </div>
-              <span>{{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti completati</span>
+              <span>
+                {{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti evasi
+                @if (checklist().filter(c => c.nonNecessario).length > 0) {
+                  <span style="color:rgba(46,46,46,0.45);font-size:11px">
+                    (di cui {{ checklist().filter(c => c.nonNecessario).length }} non necessari)
+                  </span>
+                }
+              </span>
             </div>
           </div>
         }
@@ -520,11 +541,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               <div class="card-eyebrow">Pianificazione</div>
               <div class="card-title">Gantt dei task</div>
             </div>
-            <div class="gantt-legend">
-              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#C8D0D8"></span>Previsionale</span>
-              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#6EC0AA"></span>Completato in anticipo</span>
-              <span class="gantt-legend-item"><span class="gantt-legend-dot" style="background:#E89B8A"></span>Completato in ritardo</span>
-            </div>
           </div>
           <div class="gantt-wrap">
             <div class="gantt-labels">
@@ -550,105 +566,20 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     <div class="gantt-cell" [style.width.px]="ganttDayW"
                       [style.background]="col.isMonday ? 'rgba(110,192,170,0.04)' : ''"></div>
                   }
-                  <!-- Barra PREVISIONALE (sempre grigia) -->
-                  <div class="gantt-bar gantt-bar-forecast"
-                    [style.left.px]="ganttForecastLeft(t)"
-                    [style.width.px]="ganttForecastWidth(t)"
-                    [title]="'Previsionale: ' + ganttForecastLabel(t)">
+                  <div class="gantt-bar"
+                    [class.gantt-bar-done]="t.stato==='Completato'"
+                    [class.gantt-bar-active]="t.stato==='In corso'"
+                    [class.gantt-bar-todo]="t.stato==='Da fare'"
+                    [style.left.px]="ganttBarLeft(t)"
+                    [style.width.px]="ganttBarWidth(t)">
+                    <span class="gantt-bar-label">{{ t.nome }}</span>
                   </div>
-                  <!-- Barra CONSUNTIVATA (solo se completato, verde/rossa) -->
-                  @if (t.stato === 'Completato' && t.dataInizio && t.dataFine) {
-                    <div class="gantt-bar gantt-bar-actual"
-                      [class.gantt-bar-early]="isEarly(t)"
-                      [class.gantt-bar-late]="!isEarly(t)"
-                      [style.left.px]="ganttBarLeft(t)"
-                      [style.width.px]="ganttBarWidth(t)"
-                      [title]="'Consuntivato: ' + fmtDate(t.dataInizio) + ' → ' + fmtDate(t.dataFine)">
-                      <span class="gantt-bar-label">{{ t.nome }}</span>
-                    </div>
-                  }
-                  <!-- Barra IN CORSO (blu, usa date reali) -->
-                  @if (t.stato === 'In corso' && t.dataInizio) {
-                    <div class="gantt-bar gantt-bar-active"
-                      [style.left.px]="ganttBarLeft(t)"
-                      [style.width.px]="ganttBarWidthInProgress(t)">
-                      <span class="gantt-bar-label">{{ t.nome }}</span>
-                    </div>
-                  }
                 </div>
               }
             </div>
           </div>
         </div>
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
-
-        <!-- ══ MODAL CONFERMA AGGIORNAMENTO TASK SUCCESSIVO ══ -->
-        @if (confirmNextTask() && pendingNextTaskUpdate) {
-          <div class="mb">
-            <div class="modal" style="max-width:460px">
-              <div class="mh">
-                <div>
-                  <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">Pianificazione</div>
-                  <span class="mt">Aggiorna il task successivo?</span>
-                </div>
-              </div>
-              <div class="mbody">
-                <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 16px;line-height:1.6">
-                  Hai impostato la fine di <strong>{{ pendingNextTaskUpdate.task.nome }}</strong>
-                  al <strong>{{ fmtDate(pendingNextTaskUpdate.task.dataFine || '') }}</strong>.<br>
-                  Vuoi aggiornare la data di inizio di
-                  <strong>{{ pendingNextTaskUpdate.nextTask.nome }}</strong>
-                  al giorno successivo (<strong>{{ fmtDate(pendingNextTaskUpdate.suggestedStart) }}</strong>)?
-                </p>
-                <div style="background:rgba(110,192,170,0.06);border:1px solid rgba(110,192,170,0.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:rgba(46,46,46,.6)">
-                  Questo mantiene la sequenza dei task continua e il Gantt allineato.
-                </div>
-              </div>
-              <div class="mfoot">
-                <button class="btn btn-g" (click)="applyNextTaskStart(false)">
-                  No, lascia invariato
-                </button>
-                <button class="btn btn-p" (click)="applyNextTaskStart(true)">
-                  Sì, aggiorna
-                </button>
-              </div>
-            </div>
-          </div>
-        }
-
-        <!-- ══ MODAL CONFERMA CAMBIO DATA INIZIO ══ -->
-        @if (confirmDataInizio()) {
-          <div class="mb">
-            <div class="modal" style="max-width:440px">
-              <div class="mh">
-                <div>
-                  <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--warning);margin-bottom:2px">Attenzione</div>
-                  <span class="mt">Aggiorna la data del primo task?</span>
-                </div>
-              </div>
-              <div class="mbody">
-                <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 16px;line-height:1.6">
-                  Hai modificato la <strong>data di inizio progetto</strong> al
-                  <strong>{{ fmtDate(editForm.dataInizio || '') }}</strong>.<br>
-                  Vuoi allineare anche la data di inizio del task
-                  <strong>REQUISITI</strong> alla nuova data?
-                </p>
-                <div style="background:rgba(110,192,170,0.06);border:1px solid rgba(110,192,170,0.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:rgba(46,46,46,.6)">
-                  Il task REQUISITI è sempre il punto di partenza della pianificazione.
-                  Aggiornarlo garantisce che il Gantt previsionale rimanga allineato.
-                </div>
-              </div>
-              <div class="mfoot">
-                <button class="btn btn-g" (click)="saveProject(false)">
-                  No, solo il progetto
-                </button>
-                <button class="btn btn-p" (click)="saveProject(true)" [disabled]="saving()">
-                  {{ saving() ? 'Salvataggio…' : 'Sì, aggiorna anche il task' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        }
       }
     </div>
   `,
@@ -699,6 +630,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       id: entry?.id, documento: doc,
       completato: entry?.completato || false,
       linkUrl: this.linkEditValue.trim(),
+      nonNecessario: entry?.nonNecessario || false,
       projectId
     });
     await this.db.logAction({
@@ -709,6 +641,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     });
     this.checklist.set(await this.db.getChecklist(projectId));
     this.linkEditDoc.set(null);
+    await this.checkAutoCompleta();
   }
 
   async deleteLinkEdit() {
@@ -719,10 +652,11 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     await this.db.upsertChecklistItem({
       id: entry?.id, documento: doc,
       completato: entry?.completato || false,
-      linkUrl: '', projectId
+      linkUrl: '', nonNecessario: entry?.nonNecessario || false, projectId
     });
     this.checklist.set(await this.db.getChecklist(projectId));
     this.linkEditDoc.set(null);
+    await this.checkAutoCompleta();
   }
   expandedTaskId = signal<string>('');
   expandedSubTaskId = signal<string>('');
@@ -736,6 +670,10 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const available = this.ganttContainerW() - this.ganttLabelW;
     return Math.max(14, Math.floor(available / cols));
   }
+  readonly TASK_DURATIONS: Record<string, number> = {
+    'REQUISITI': 7, 'TEMPI E STIME': 7, 'SVILUPPO': 15,
+    'COLLAUDO LDT': 7, 'COLLAUDO BU': 7, 'PRODUZIONE': 15, 'ADOPTION': 7
+  };
 
   // ── BU panel ─────────────────────────────────────────
   sameBuProjects = computed(() => {
@@ -785,13 +723,13 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   ganttEnd = computed(() => {
     const start = this.ganttStart();
     const tasks = this.tasks();
-    // Fine previsionale: somma settimaneStimate di tutti i task
+    const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     let totalDays = 0;
-    tasks.forEach(t => totalDays += (t.settimaneStimate || 1) * 7);
-    const forecastEnd = new Date(start.getTime() + totalDays * 86400000);
-    // Estendi se ci sono date reali oltre la previsione
+    TASK_SEQUENCE.forEach(name => { totalDays += this.TASK_DURATIONS[name] || 7; });
+    // Use real end dates if available
     const realEnds = tasks.map(t => t.dataFine).filter(Boolean).map(d => new Date(d));
-    return realEnds.length ? new Date(Math.max(forecastEnd.getTime(), ...realEnds.map(d => d.getTime()))) : forecastEnd;
+    const theoreticalEnd = new Date(start.getTime() + totalDays * 86400000);
+    return realEnds.length ? new Date(Math.max(theoreticalEnd.getTime(), ...realEnds.map(d => d.getTime()))) : theoreticalEnd;
   });
 
   ganttColumns = computed(() => {
@@ -812,79 +750,28 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return cols;
   });
 
-  // Posizione barra previsionale: cumulato delle settimane precedenti
-  ganttForecastLeft(t: Task): number {
-    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
-    const idx = SEQUENCE.indexOf(t.nome);
-    const tasks = this.tasks();
-    let offset = 0;
-    for (let i = 0; i < idx; i++) {
-      const prev = tasks.find(x => x.nome === SEQUENCE[i]);
-      offset += (prev?.settimaneStimate || 1) * 7;
-    }
-    return offset * this.ganttDayW;
-  }
-
-  // Larghezza barra previsionale in base alle settimane stimate
-  ganttForecastWidth(t: Task): number {
-    return (t.settimaneStimate || 1) * 7 * this.ganttDayW;
-  }
-
-  ganttForecastLabel(t: Task): string {
-    const start = this.ganttStart();
-    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
-    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
-    const s = new Date(start.getTime() + leftDays * 86400000);
-    const e = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
-    return this.fmtDate(s.toISOString().split('T')[0]) + ' → ' + this.fmtDate(e.toISOString().split('T')[0]);
-  }
-
-  // Posizione barra consuntivata (usa dataInizio reale)
   ganttBarLeft(t: Task): number {
     const start = this.ganttStart();
-    const taskStart = t.dataInizio ? new Date(t.dataInizio) : start;
+    const taskStart = t.dataInizio ? new Date(t.dataInizio) : this.calcTheoreticalStart(t);
     const diff = Math.floor((taskStart.getTime() - start.getTime()) / 86400000);
     return Math.max(0, diff) * this.ganttDayW;
   }
 
-  // Larghezza barra consuntivata (dataInizio → dataFine reali)
   ganttBarWidth(t: Task): number {
     if (t.dataInizio && t.dataFine) {
       const s = new Date(t.dataInizio); const e = new Date(t.dataFine);
       const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
       return days * this.ganttDayW;
     }
-    return (t.settimaneStimate || 1) * 7 * this.ganttDayW;
-  }
-
-  // Larghezza barra "in corso" (da dataInizio a oggi)
-  ganttBarWidthInProgress(t: Task): number {
-    const s = new Date(t.dataInizio || new Date());
-    const e = new Date();
-    const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
-    return days * this.ganttDayW;
-  }
-
-  // Completato prima della fine previsionale?
-  isEarly(t: Task): boolean {
-    if (!t.dataFine) return false;
-    const start = this.ganttStart();
-    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
-    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
-    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
-    return new Date(t.dataFine) <= forecastEnd;
+    return (this.TASK_DURATIONS[t.nome] || 7) * this.ganttDayW;
   }
 
   calcTheoreticalStart(t: Task): Date {
     const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const idx = SEQUENCE.indexOf(t.nome);
-    const tasks = this.tasks();
     const start = this.ganttStart();
     let offset = 0;
-    for (let i = 0; i < idx; i++) {
-      const prev = tasks.find(x => x.nome === SEQUENCE[i]);
-      offset += (prev?.settimaneStimate || 1) * 7;
-    }
+    for (let i = 0; i < idx; i++) offset += this.TASK_DURATIONS[SEQUENCE[i]] || 7;
     return new Date(start.getTime() + offset * 86400000);
   }
 
@@ -941,19 +828,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ownerName(id: string): string { return this.users().find(u => u.id === id)?.name || '—'; }
-  fmtDate(d: string): string {
-    if (!d) return '—';
-    const date = new Date(d);
-    if (isNaN(date.getTime()) || date.getFullYear() < 2000) return '—';
-    return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' });
-  }
-
-  /** Restituisce la stringa ISO solo se l'anno è valido (>= 2000), altrimenti stringa vuota */
-  sanitizeDate(d: string): string {
-    if (!d) return '';
-    const date = new Date(d);
-    return (!isNaN(date.getTime()) && date.getFullYear() >= 2000) ? d : '';
-  }
+  fmtDate(d: string): string { if (!d) return '—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
   statoBadge(s: string): string { const m: Record<string,string>={'In corso':'bb','Completato':'bg','Pianificazione':'bgr','In attesa':'bo','Annullato':'br','On Hold':'bo'}; return 'badge '+(m[s]||'bgr'); }
   prioBadge(p: string): string { const m: Record<string,string>={'Critica':'prio-critica','Alta':'prio-alta','Media':'prio-media','Bassa':'prio-bassa'}; return 'badge '+(m[p]||'bgr'); }
   docBadge(d: string): string { const m: Record<string,string>={'totale':'bg','parziale':'bo','non necessaria':'bgr'}; return 'badge '+(m[d]||'bgr'); }
@@ -961,38 +836,11 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   ticketBadge(s: string): string { const m: Record<string,string>={'Aperto':'bb','In lavorazione':'bo','Risolto':'bg','Chiuso':'bgr'}; return 'badge '+(m[s]||'bgr'); }
   showToast(msg: string) { this.toast.set(msg); setTimeout(() => this.toast.set(''), 3000); }
 
-  confirmDataInizio = signal(false); // mostra il mini-modal di conferma cambio data inizio
-  confirmNextTask = signal(false);   // mostra il modal di conferma aggiornamento task successivo
-  pendingNextTaskUpdate: { task: Task; nextTask: Task; suggestedStart: string } | null = null;
-
-  async saveProject(updateFirstTask?: boolean) {
+  async saveProject() {
     if (!this.project()) return;
-
-    // Se la data inizio è cambiata e non abbiamo ancora chiesto conferma, apri il modal
-    const old = this.project()!;
-    const dataInizioChanged = this.editForm.dataInizio && this.editForm.dataInizio !== old.dataInizio;
-    const firstTask = this.tasks().find(t => t.nome === 'REQUISITI');
-    const firstTaskHasNoRealStart = !firstTask?.dataInizio || firstTask.dataInizio === old.dataInizio;
-
-    if (dataInizioChanged && firstTask && firstTaskHasNoRealStart && updateFirstTask === undefined) {
-      this.confirmDataInizio.set(true);
-      return;
-    }
-
-    this.confirmDataInizio.set(false);
     this.saving.set(true);
-
+    const old = this.project()!;
     await this.db.updateProject(old.id, this.editForm as Project);
-
-    // Se confermato, aggiorna la dataInizio del primo task (REQUISITI)
-    if (updateFirstTask && firstTask && this.editForm.dataInizio) {
-      const updatedTasks = await this.db.updateTaskWithCascade(
-        firstTask.id, { dataInizio: this.editForm.dataInizio }, this.tasks()
-      );
-      this.tasks.set(updatedTasks);
-      updatedTasks.forEach(t => { this.initNewSubTask(t.id); });
-    }
-
     // Log campi modificati
     const uid = this.auth.currentUser()?.id || '';
     const changedFields = Object.keys(this.editForm).filter(k =>
@@ -1014,11 +862,35 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   getChecklistEntry(doc: string): ChecklistItem | undefined { return this.checklist().find(c => c.documento === doc); }
-  completatiCount(): number { return this.checklist().filter(c => c.completato).length; }
+  completatiCount(): number { return this.checklist().filter(c => c.completato || c.nonNecessario).length; }
+
+  async checkAutoCompleta(): Promise<void> {
+    const docs = this.config()?.docFields || [];
+    if (docs.length === 0) return;
+    const p = this.project();
+    if (!p) return;
+    const allDone = docs.every(doc => {
+      const e = this.getChecklistEntry(doc);
+      return e && (e.completato || e.nonNecessario);
+    });
+    if (allDone && p.documentazione !== 'completata') {
+      await this.db.updateProject(p.id, { ...p, documentazione: 'completata' });
+      this.project.set({ ...p, documentazione: 'completata' });
+      this.showToast('Documentazione completata automaticamente ✓');
+    } else if (!allDone && p.documentazione === 'completata') {
+      await this.db.updateProject(p.id, { ...p, documentazione: 'parziale' });
+      this.project.set({ ...p, documentazione: 'parziale' });
+    }
+  }
+
   async toggleChecklist(doc: string, entry: ChecklistItem | undefined) {
     const projectId = this.project()!.id;
+    if (entry?.nonNecessario) return;
     const newVal = !entry?.completato;
-    await this.db.upsertChecklistItem({ id: entry?.id, documento: doc, completato: newVal, linkUrl: this.checklistLinks[doc]||'', projectId });
+    await this.db.upsertChecklistItem({
+      id: entry?.id, documento: doc, completato: newVal,
+      linkUrl: entry?.linkUrl || '', nonNecessario: false, projectId
+    });
     await this.db.logAction({
       userId: this.auth.currentUser()?.id || '', action: 'update', entityType: 'checklist',
       entityId: entry?.id || doc, entityName: doc,
@@ -1026,10 +898,30 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       field: 'completato', oldValue: String(!newVal), newValue: String(newVal),
     });
     this.checklist.set(await this.db.getChecklist(projectId));
+    await this.checkAutoCompleta();
+  }
+
+  async toggleNonNecessario(doc: string, entry: ChecklistItem | undefined) {
+    const projectId = this.project()!.id;
+    const newVal = !entry?.nonNecessario;
+    await this.db.upsertChecklistItem({
+      id: entry?.id, documento: doc,
+      completato: newVal ? false : (entry?.completato || false),
+      linkUrl: newVal ? '' : (entry?.linkUrl || ''),
+      nonNecessario: newVal, projectId
+    });
+    await this.db.logAction({
+      userId: this.auth.currentUser()?.id || '', action: 'update', entityType: 'checklist',
+      entityId: entry?.id || doc, entityName: doc,
+      projectId, projectName: this.project()!.nome,
+      field: 'nonNecessario', oldValue: String(!newVal), newValue: String(newVal),
+    });
+    this.checklist.set(await this.db.getChecklist(projectId));
+    await this.checkAutoCompleta();
   }
   async saveChecklistLink(doc: string, entry: ChecklistItem | undefined) {
     const projectId = this.project()!.id;
-    await this.db.upsertChecklistItem({ id: entry?.id, documento: doc, completato: entry?.completato||false, linkUrl: this.checklistLinks[doc]||'', projectId });
+    await this.db.upsertChecklistItem({ id: entry?.id, documento: doc, completato: entry?.completato||false, linkUrl: this.checklistLinks[doc]||'', nonNecessario: entry?.nonNecessario||false, projectId });
     this.showToast('Link salvato');
   }
 
@@ -1043,11 +935,8 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async updateTaskCascade(t: Task): Promise<void> {
-    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const old = this.tasks().find(x => x.id === t.id);
     const oldStato = old?.stato || '';
-    const dataFineChanged = t.dataFine && t.dataFine !== old?.dataFine;
-
     const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
     await this.db.logAction({
       userId: this.auth.currentUser()?.id || '',
@@ -1059,54 +948,6 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
     this.showToast('Task aggiornato');
-
-    // Se è cambiata la dataFine, proponi di aggiornare la dataInizio del task successivo
-    if (dataFineChanged) {
-      const idx = SEQUENCE.indexOf(t.nome);
-      if (idx >= 0 && idx < SEQUENCE.length - 1) {
-        const nextNome = SEQUENCE[idx + 1];
-        const nextTask = this.tasks().find(x => x.nome === nextNome && x.projectId === t.projectId);
-        if (nextTask) {
-          // Suggerisci il giorno dopo la dataFine come inizio del task successivo
-          const nextDay = new Date(t.dataFine!);
-          nextDay.setDate(nextDay.getDate() + 1);
-          const suggestedStart = nextDay.toISOString().split('T')[0];
-          this.pendingNextTaskUpdate = { task: t, nextTask, suggestedStart };
-          this.confirmNextTask.set(true);
-        }
-      }
-    }
-  }
-
-  async applyNextTaskStart(confirm: boolean): Promise<void> {
-    const p = this.pendingNextTaskUpdate;
-    this.confirmNextTask.set(false);
-    this.pendingNextTaskUpdate = null;
-    if (!confirm || !p) return;
-    const updated = await this.db.updateTaskWithCascade(
-      p.nextTask.id, { dataInizio: p.suggestedStart }, this.tasks()
-    );
-    this.tasks.set(updated);
-    updated.forEach(task => { this.initNewSubTask(task.id); });
-    this.showToast('Data inizio task successivo aggiornata');
-  }
-
-  async generateTasks(): Promise<void> {
-    const p = this.project();
-    if (!p) return;
-    this.saving.set(true);
-    try {
-      const dataInizio = p.dataInizio || new Date().toISOString().split('T')[0];
-      await this.db.initProjectTasks(p.id, dataInizio);
-      const allTasks = await this.db.getTasks();
-      const projectTasks = allTasks.filter(t => t.projectId === p.id);
-      this.tasks.set(projectTasks);
-      projectTasks.forEach(t => this.initNewSubTask(t.id));
-      this.showToast('Task generati con successo');
-    } catch {
-      this.showToast('Errore nella generazione dei task');
-    }
-    this.saving.set(false);
   }
 
   initNewSubTask(taskId: string): void {

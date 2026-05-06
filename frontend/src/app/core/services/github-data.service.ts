@@ -233,15 +233,17 @@ export class GithubDataService {
   }
 
   async saveChecklist(items: ChecklistItem[]): Promise<void> {
-    const headers = ['id','documento','completato','linkUrl','projectId'];
+    const headers = ['id','documento','completato','linkUrl','projectId','nonNecessario'];
     await this.writeFile('data/checklist.csv', this.toCsv(items, headers), 'Update checklist');
   }
 
   async upsertChecklistItem(item: Omit<ChecklistItem, 'id'> & { id?: string }): Promise<void> {
     const all = await this.getChecklist();
     const idx = all.findIndex(c => c.projectId === item.projectId && c.documento === item.documento);
-    if (idx >= 0) { all[idx] = { ...all[idx], ...item } as ChecklistItem; }
-    else { all.push({ ...item, id: this.uid() } as ChecklistItem); }
+    const base = idx >= 0 ? all[idx] : { nonNecessario: false };
+    const full: ChecklistItem = { ...base, id: item.id || (idx >= 0 ? all[idx].id : this.uid()), ...item };
+    if (idx >= 0) { all[idx] = full; }
+    else { all.push(full); }
     await this.saveChecklist(all);
   }
 
