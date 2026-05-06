@@ -248,10 +248,10 @@ button, input, select, textarea { font-family: inherit; }
   min-width: 0;
   display: flex;
   flex-direction: column;
-  margin: 6px 6px 6px 0;
-  border-radius: 12px;
-  background: var(--bg);
-  overflow: hidden;
+  gap: 10px;
+  padding: 10px 10px 10px 0;
+  background: transparent;
+  overflow: visible;
 }
 
 /* Topbar interna alla main (header pagina) */
@@ -259,12 +259,11 @@ button, input, select, textarea { font-family: inherit; }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 32px;
-  border-bottom: var(--bd);
+  padding: 18px 24px;
   background: var(--bg-elev);
-  margin: 16px 16px 0;
   border-radius: var(--r-lg);
   border: var(--bd);
+  flex-shrink: 0;
 }
 .topbar-title { line-height: 1.15; }
 .topbar-eyebrow {
@@ -336,7 +335,6 @@ button, input, select, textarea { font-family: inherit; }
   padding: 14px 24px;
   background: var(--bg-elev);
   flex-wrap: wrap;
-  margin: 8px 16px 0;
   border-radius: var(--r-lg);
   border: var(--bd);
 }
@@ -405,8 +403,8 @@ button, input, select, textarea { font-family: inherit; }
 .icon-btn-sq.active { background: var(--ink); color: white; border-color: var(--ink); }
 
 /* ── PAGE CONTENT ──────────────────────────────────── */
-.page { display: flex; flex-direction: column; }
-.page-body { padding: 16px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
+.page { display: flex; flex-direction: column; gap: 0; }
+.page-body { padding: 0; display: flex; flex-direction: column; gap: 10px; }
 
 .page-hdr {
   margin-bottom: 24px;
@@ -1056,7 +1054,7 @@ select.fi {
   background: var(--bg-elev);
   border: var(--bd);
   border-radius: var(--r-lg);
-  margin: 16px 16px 0;
+  margin: 0;
   overflow: hidden;
 }
 .proj-hdr-top {
