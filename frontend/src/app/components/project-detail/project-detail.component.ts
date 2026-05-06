@@ -977,7 +977,36 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ownerName(id: string): string { return this.users().find(u => u.id === id)?.name || '—'; }
-  fmtDate(d: string): string { if (!d) return '—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+  fmtDate(d: string): string {
+    if (!d) return '—';
+    const date = new Date(d);
+    if (isNaN(date.getTime()) || date.getFullYear() < 2000) return '—';
+    return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  }
+
+  sanitizeDate(d: string): string {
+    if (!d) return '';
+    const date = new Date(d);
+    return (!isNaN(date.getTime()) && date.getFullYear() >= 2000) ? d : '';
+  }
+
+  async generateTasks(): Promise<void> {
+    const p = this.project();
+    if (!p) return;
+    this.saving.set(true);
+    try {
+      const dataInizio = p.dataInizio || new Date().toISOString().split('T')[0];
+      await this.db.initProjectTasks(p.id, dataInizio);
+      const allTasks = await this.db.getTasks();
+      const projectTasks = allTasks.filter(t => t.projectId === p.id);
+      this.tasks.set(projectTasks);
+      projectTasks.forEach(t => this.initNewSubTask(t.id));
+      this.showToast('Task generati con successo');
+    } catch {
+      this.showToast('Errore nella generazione dei task');
+    }
+    this.saving.set(false);
+  }
   statoBadge(s: string): string { const m: Record<string,string>={'In corso':'bb','Completato':'bg','Pianificazione':'bgr','In attesa':'bo','Annullato':'br','On Hold':'bo'}; return 'badge '+(m[s]||'bgr'); }
   prioBadge(p: string): string { const m: Record<string,string>={'Critica':'prio-critica','Alta':'prio-alta','Media':'prio-media','Bassa':'prio-bassa'}; return 'badge '+(m[p]||'bgr'); }
   docBadge(d: string): string { const m: Record<string,string>={'totale':'bg','parziale':'bo','non necessaria':'bgr'}; return 'badge '+(m[d]||'bgr'); }
