@@ -1744,3 +1744,25 @@ select.fi {
   transition: background .15s;
   &:hover { background: rgba(110,192,170,0.3); }
 }
+
+/* ── LAYOUT DUE COLONNE descrizione | dettagli ───────── */
+.proj-split-row {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 16px;
+  align-items: start;
+}
+.proj-split-desc {
+  padding: 20px;
+  min-height: 120px;
+}
+.proj-desc-text {
+  font-size: 13.5px;
+  color: rgba(46,46,46,0.7);
+  line-height: 1.65;
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+.proj-split-details {
+  min-width: 0; /* prevent overflow in grid */
+}

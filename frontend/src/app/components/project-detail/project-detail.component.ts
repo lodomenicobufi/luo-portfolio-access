@@ -218,50 +218,33 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         }
 
-        <!-- Descrizione (collassabile) -->
-        @if (project()!.descrizione) {
-          <div class="card collapsible-card" style="margin-bottom:16px">
-            <div class="collapsible-hdr card-hdr" (click)="descOpen.set(!descOpen())">
+        <!-- LAYOUT DUE COLONNE: descrizione | dettagli -->
+        <div class="proj-split-row" style="margin-bottom:16px">
+
+          <!-- Colonna sinistra: Descrizione -->
+          @if (project()!.descrizione) {
+            <div class="card proj-split-desc">
+              <div class="card-eyebrow">Descrizione</div>
+              <div class="proj-desc-text">{{ project()!.descrizione }}</div>
+            </div>
+          }
+
+          <!-- Colonna destra: Dettagli (tabs) -->
+          <div class="card collapsible-card proj-split-details">
+            <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
               <div class="collapsible-hdr-left">
-                <svg class="collapse-chevron" [class.open]="descOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+                <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
-                <div>
-                  <div class="card-eyebrow">Descrizione</div>
-                  <div class="card-title" style="font-size:14px">
-                    @if (!descOpen()) {
-                      {{ project()!.descrizione | slice:0:80 }}{{ project()!.descrizione.length > 80 ? '…' : '' }}
-                    } @else {
-                      Dettagli progetto
-                    }
-                  </div>
-                </div>
+                <div class="card-title" style="font-size:14px">Dettagli</div>
+              </div>
+              <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
+                @for (t of getTabs(); track t.id) {
+                  <button class="tab" [class.active]="activeTab()===t.id"
+                    (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
+                }
               </div>
             </div>
-            @if (descOpen()) {
-              <div class="desc-body">
-                {{ project()!.descrizione }}
-              </div>
-            }
-          </div>
-        }
-
-        <!-- RIGA 2: tabs collassabili (full width) -->
-        <div class="card collapsible-card" style="margin-bottom:16px">
-          <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
-            <div class="collapsible-hdr-left">
-              <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-              <div class="card-title" style="font-size:14px">Dettagli</div>
-            </div>
-            <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
-              @for (t of getTabs(); track t.id) {
-                <button class="tab" [class.active]="activeTab()===t.id"
-                  (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
-              }
-            </div>
-          </div>
 
           @if (tabsOpen()) {
 
@@ -543,7 +526,8 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         }
 
               }<!-- /tabsOpen -->
-          </div><!-- /collapsible card tabs -->
+          </div><!-- /proj-split-details -->
+        </div><!-- /proj-split-row -->
 
         <!-- GANTT full-width -->
         <div class="card gantt-card">
