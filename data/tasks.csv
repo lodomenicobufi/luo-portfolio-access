@@ -1,29 +1,36 @@
-id,nome,dataInizio,dataFine,stato,projectId
-t1,REQUISITI,2024-01-15,2020-12-10,Completato,p1
-t2,TEMPI E STIME,2024-04-11,,Da fare,p1
-t3,SVILUPPO,,,Da fare,p1
-t4,COLLAUDO LDT,,,Da fare,p1
-t5,COLLAUDO BU,,,Da fare,p1
-t6,PRODUZIONE,,,Da fare,p1
-t7,ADOPTION,,,Da fare,p1
-t8,REQUISITI,2024-03-01,,In corso,p2
-t9,TEMPI E STIME,,,Da fare,p2
-t10,SVILUPPO,,,Da fare,p2
-t11,COLLAUDO LDT,,,Da fare,p2
-t12,COLLAUDO BU,,,Da fare,p2
-t13,PRODUZIONE,,,Da fare,p2
-t14,ADOPTION,,,Da fare,p2
-_juq3ezf,REQUISITI,2026-04-28,2026-04-30,Completato,_7xqb4fk
-_mcnx4d7,TEMPI E STIME,2026-05-01,,Da fare,_7xqb4fk
-_25m0ncz,SVILUPPO,,,Da fare,_7xqb4fk
-_tyxhvfe,COLLAUDO LDT,,,Da fare,_7xqb4fk
-_rjw1v6z,COLLAUDO BU,,,Da fare,_7xqb4fk
-_pdk2bg8,PRODUZIONE,,,Da fare,_7xqb4fk
-_zv4hvzd,ADOPTION,,,Da fare,_7xqb4fk
-_z5j2678,REQUISITI,2026-04-28,,Da fare,_mgls32l
-_r0gqlxw,TEMPI E STIME,,,Da fare,_mgls32l
-_hwyjplp,SVILUPPO,,,Da fare,_mgls32l
-_irhhf6y,COLLAUDO LDT,,,Da fare,_mgls32l
-_ar0m20x,COLLAUDO BU,,,Da fare,_mgls32l
-_5zomlls,PRODUZIONE,,,Da fare,_mgls32l
-_ae18f4p,ADOPTION,,,Da fare,_mgls32l
+id,nome,dataInizio,dataFine,stato,projectId,settimaneStimate
+t1,REQUISITI,2024-01-15,2020-12-10,Completato,p1,
+t2,TEMPI E STIME,2024-04-11,,Da fare,p1,
+t3,SVILUPPO,,,Da fare,p1,
+t4,COLLAUDO LDT,,,Da fare,p1,
+t5,COLLAUDO BU,,,Da fare,p1,
+t6,PRODUZIONE,,,Da fare,p1,
+t7,ADOPTION,,,Da fare,p1,
+t8,REQUISITI,2024-03-01,,In corso,p2,
+t9,TEMPI E STIME,,,Da fare,p2,
+t10,SVILUPPO,,,Da fare,p2,
+t11,COLLAUDO LDT,,,Da fare,p2,
+t12,COLLAUDO BU,,,Da fare,p2,
+t13,PRODUZIONE,,,Da fare,p2,
+t14,ADOPTION,,,Da fare,p2,
+_juq3ezf,REQUISITI,2026-04-28,2026-04-30,Completato,_7xqb4fk,
+_mcnx4d7,TEMPI E STIME,2026-05-01,,Da fare,_7xqb4fk,
+_25m0ncz,SVILUPPO,,,Da fare,_7xqb4fk,
+_tyxhvfe,COLLAUDO LDT,,,Da fare,_7xqb4fk,
+_rjw1v6z,COLLAUDO BU,,,Da fare,_7xqb4fk,
+_pdk2bg8,PRODUZIONE,,,Da fare,_7xqb4fk,
+_zv4hvzd,ADOPTION,,,Da fare,_7xqb4fk,
+_z5j2678,REQUISITI,2026-04-28,,Da fare,_mgls32l,
+_r0gqlxw,TEMPI E STIME,,,Da fare,_mgls32l,
+_hwyjplp,SVILUPPO,,,Da fare,_mgls32l,
+_irhhf6y,COLLAUDO LDT,,,Da fare,_mgls32l,
+_ar0m20x,COLLAUDO BU,,,Da fare,_mgls32l,
+_5zomlls,PRODUZIONE,,,Da fare,_mgls32l,
+_ae18f4p,ADOPTION,,,Da fare,_mgls32l,
+_m32frw5,REQUISITI,2026-05-06,,Da fare,_ji7jcq6,2
+_8kxf6oz,TEMPI E STIME,,,Da fare,_ji7jcq6,1
+_z7i4h45,SVILUPPO,,,Da fare,_ji7jcq6,4
+_022nzll,COLLAUDO LDT,,,Da fare,_ji7jcq6,1
+_qhl6cfa,COLLAUDO BU,,,Da fare,_ji7jcq6,1
+_1l1yqix,PRODUZIONE,,,Da fare,_ji7jcq6,3
+_vqp41jm,ADOPTION,,,Da fare,_ji7jcq6,1
