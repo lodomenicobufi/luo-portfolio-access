@@ -333,10 +333,12 @@ button, input, select, textarea { font-family: inherit; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 32px;
-  border-bottom: var(--bd-soft);
+  padding: 14px 24px;
   background: var(--bg-elev);
   flex-wrap: wrap;
+  margin: 8px 16px 0;
+  border-radius: var(--r-lg);
+  border: var(--bd);
 }
 .filter-label {
   font-size: 12px;
