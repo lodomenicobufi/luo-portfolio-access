@@ -262,6 +262,9 @@ button, input, select, textarea { font-family: inherit; }
   padding: 18px 32px;
   border-bottom: var(--bd);
   background: var(--bg-elev);
+  margin: 16px 16px 0;
+  border-radius: var(--r-lg);
+  border: var(--bd);
 }
 .topbar-title { line-height: 1.15; }
 .topbar-eyebrow {
