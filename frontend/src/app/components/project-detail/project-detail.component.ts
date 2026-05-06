@@ -490,10 +490,10 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
             <div class="chk-footer">
               <div class="chk-footer-bar">
-                <div class="chk-footer-fill" [style.width.%]="(completatiCount() / (config()?.docFields?.length||1)) * 100"></div>
+                <div class="chk-footer-fill" [style.width.%]="(completatiCount() / (docTotale() || 1)) * 100"></div>
               </div>
               <span>
-                {{ completatiCount() }} / {{ config()?.docFields?.length || 0 }} documenti evasi
+                {{ completatiCount() }} / {{ docTotale() }} documenti completati
                 @if (nonNecessarioCount() > 0) {
                   <span style="color:rgba(46,46,46,0.45);font-size:11px">
                     (di cui {{ nonNecessarioCount() }} non necessari)
@@ -781,7 +781,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return [
       { id:'task',      label:'Task (' + doneCount + '/' + this.tasks().length + ')' },
       { id:'ticket',    label:'Ticket SD (' + openTickets + ' aperti)' },
-      { id:'checklist', label:'Checklist (' + this.completatiCount() + '/' + (this.config()?.docFields?.length||0) + ')' },
+      { id:'checklist', label:'Checklist (' + this.completatiCount() + '/' + this.docTotale() + ')' },
     ];
   }
 
@@ -862,14 +862,16 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   getChecklistEntry(doc: string): ChecklistItem | undefined { return this.checklist().find(c => c.documento === doc); }
-  completatiCount(): number { return this.checklist().filter(c => c.completato || c.nonNecessario).length; }
+  completatiCount(): number { return this.checklist().filter(c => c.completato && !c.nonNecessario).length; }
   nonNecessarioCount(): number { return this.checklist().filter(c => c.nonNecessario).length; }
+  docTotale(): number { return (this.config()?.docFields?.length || 0) - this.nonNecessarioCount(); }
 
   async checkAutoCompleta(): Promise<void> {
     const docs = this.config()?.docFields || [];
     if (docs.length === 0) return;
     const p = this.project();
     if (!p) return;
+    // Tutti i doc devono essere completati o non necessari
     const allDone = docs.every(doc => {
       const e = this.getChecklistEntry(doc);
       return e && (e.completato || e.nonNecessario);
