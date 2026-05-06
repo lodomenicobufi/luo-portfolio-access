@@ -292,8 +292,11 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     @if (auth.isEditor && !isTaskLocked(t)) {
                       <input class="task-date-input task-date-editable" type="date"
                         [(ngModel)]="t.dataFine"
-                        (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"
+                        #dataFineInput
                         title="Data fine"/>
+                      <button class="btn-save-date" (click)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)" title="Salva data fine">
+                        ✓
+                      </button>
                     } @else {
                       <input class="task-date-input" type="date" [value]="t.dataFine" disabled title="Data fine"/>
                     }

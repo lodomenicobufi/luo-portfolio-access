@@ -1733,3 +1733,14 @@ select.fi {
   color: rgba(46,46,46,0.35);
   flex-shrink: 0;
 }
+
+/* ── SAVE DATE BUTTON ────────────────────────────────── */
+.btn-save-date {
+  width: 24px; height: 24px; border-radius: 5px; flex-shrink: 0;
+  background: rgba(110,192,170,0.15); color: var(--mint-dd);
+  border: 1px solid rgba(110,192,170,0.35);
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+  &:hover { background: rgba(110,192,170,0.3); }
+}
