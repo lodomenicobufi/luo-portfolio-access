@@ -14,6 +14,7 @@ declare var Chart: any;
   standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
+    <div class="page">
     <div class="filter-bar">
       <span class="filter-label">Stato:</span>
       <button class="filter-pill" [class.active]="filterStato===''" (click)="filterStato=''">Tutti</button>

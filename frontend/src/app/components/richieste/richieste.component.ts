@@ -14,6 +14,7 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
+    <div class="page">
     <div class="filter-bar">
       @if (isViewer()) {
         <span class="filter-label">Le mie richieste</span>

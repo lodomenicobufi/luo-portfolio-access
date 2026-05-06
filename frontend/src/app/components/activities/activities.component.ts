@@ -12,6 +12,7 @@ import { ActivityLog, User, Project } from '../../core/models';
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
+    <div class="page">
     <div class="filter-bar">
       <button class="filter-pill" [class.active]="fType===''" (click)="fType=''">Tutte</button>
       <button class="filter-pill" [class.active]="fType==='project'" (click)="fType='project'">Progetti</button>

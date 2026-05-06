@@ -14,6 +14,7 @@ import { Project, User, AppConfig } from '../../core/models';
   imports: [CommonModule, RouterLink, FormsModule],
   template: `
     <!-- ─── FILTER BAR ─────────────────────────────── -->
+    <div class="page">
     <div class="filter-bar">
       <input class="select-chip" style="width:240px;background-image:none;padding-right:12px"
         [(ngModel)]="search" placeholder="🔍 Cerca progetto…"/>
