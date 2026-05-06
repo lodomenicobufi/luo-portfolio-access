@@ -37,6 +37,9 @@ jobs:
           mkdir -p frontend/dist/frontend/browser
           cp -r data frontend/dist/frontend/browser/
 
+      - name: Add 404.html for SPA routing
+        run: cp frontend/dist/frontend/browser/index.html frontend/dist/frontend/browser/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
