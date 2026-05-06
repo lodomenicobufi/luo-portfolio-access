@@ -834,9 +834,8 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
     const actualEnd = new Date(t.dataFine);
     const deltaDays = Math.round((actualEnd.getTime() - forecastEnd.getTime()) / 86400000);
-    if (deltaDays === 0) return '✓ In tempo';
-    if (deltaDays > 0) return `+${deltaDays}gg ritardo`;
-    return `${deltaDays}gg anticipo`;
+    if (deltaDays === 0) return '✓';
+    return (deltaDays > 0 ? '+' : '') + deltaDays + 'gg';
   }
 
   // Etichetta delta per task in corso (giorni rispetto alla fine previsionale)
@@ -847,9 +846,8 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
     const today = new Date();
     const deltaDays = Math.round((today.getTime() - forecastEnd.getTime()) / 86400000);
-    if (deltaDays > 0) return `+${deltaDays}gg`;
-    if (deltaDays < 0) return `${Math.abs(deltaDays)}gg rimasti`;
-    return 'scade oggi';
+    if (deltaDays === 0) return '✓';
+    return (deltaDays > 0 ? '+' : '') + deltaDays + 'gg';
   }
 
   calcTheoreticalStart(t: Task): Date {
