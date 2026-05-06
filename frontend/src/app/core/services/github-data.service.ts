@@ -371,17 +371,12 @@ export class GithubDataService {
     const updatedTask = allTasks[idx];
 
     const taskIdx = SEQUENCE.indexOf(updatedTask.nome);
-    if (
-      taskIdx >= 0 &&
-      taskIdx < SEQUENCE.length - 1 &&
-      updatedTask.stato === 'Completato' &&
-      updatedTask.dataFine
-    ) {
+    if (taskIdx >= 0 && taskIdx < SEQUENCE.length - 1 && updatedTask.dataFine) {
       const nextNome = SEQUENCE[taskIdx + 1];
       const nextIdx = allTasks.findIndex(
         t => t.projectId === updatedTask.projectId && t.nome === nextNome
       );
-      if (nextIdx >= 0 && allTasks[nextIdx].stato === 'Da fare' && !allTasks[nextIdx].dataInizio) {
+      if (nextIdx >= 0) {
         const nextDate = new Date(updatedTask.dataFine);
         nextDate.setDate(nextDate.getDate() + 1);
         allTasks[nextIdx].dataInizio = nextDate.toISOString().split('T')[0];

@@ -1079,12 +1079,10 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async updateTaskCascade(t: Task): Promise<void> {
-    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const old = this.tasks().find(x => x.id === t.id);
     const oldStato = old?.stato || '';
-    const dataFineChanged = !!t.dataFine && t.dataFine !== old?.dataFine;
 
-    let updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
+    const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
     await this.db.logAction({
       userId: this.auth.currentUser()?.id || '',
       action: t.stato !== oldStato ? 'status_change' : 'update',
@@ -1092,22 +1090,6 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       projectId: t.projectId, projectName: this.project()!.nome,
       field: 'stato', oldValue: oldStato, newValue: t.stato,
     });
-
-    // Se dataFine è cambiata, aggiorna automaticamente la dataInizio del task successivo
-    if (dataFineChanged) {
-      const idx = SEQUENCE.indexOf(t.nome);
-      if (idx >= 0 && idx < SEQUENCE.length - 1) {
-        const nextNome = SEQUENCE[idx + 1];
-        const nextTask = updated.find(x => x.nome === nextNome && x.projectId === t.projectId);
-        if (nextTask) {
-          const nextDay = new Date(t.dataFine!);
-          nextDay.setDate(nextDay.getDate() + 1);
-          const suggestedStart = nextDay.toISOString().split('T')[0];
-          updated = await this.db.updateTaskWithCascade(nextTask.id, { dataInizio: suggestedStart }, updated);
-        }
-      }
-    }
-
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
     this.showToast('Task aggiornato');
