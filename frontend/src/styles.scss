@@ -401,7 +401,7 @@ button, input, select, textarea { font-family: inherit; }
 
 /* ── PAGE CONTENT ──────────────────────────────────── */
 .page { display: flex; flex-direction: column; }
-.page-body { padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 16px; }
+.page-body { padding: 16px 16px 16px; display: flex; flex-direction: column; gap: 16px; }
 
 .page-hdr {
   margin-bottom: 24px;
@@ -1051,7 +1051,7 @@ select.fi {
   background: var(--bg-elev);
   border: var(--bd);
   border-radius: var(--r-lg);
-  margin-bottom: 16px;
+  margin: 16px 16px 0;
   overflow: hidden;
 }
 .proj-hdr-top {
