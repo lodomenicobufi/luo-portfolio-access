@@ -227,9 +227,9 @@ import { Project, User, AppConfig } from '../../core/models';
                   <div class="settimane-num">{{ i + 1 }}</div>
                   <div class="settimane-nome">{{ nome }}</div>
                   <div class="settimane-input-wrap">
-                    <button class="settimane-btn" (click)="settimaneMap[nome] = Math.max(1, (settimaneMap[nome]||1) - 1)">−</button>
+                    <button class="settimane-btn" (click)="decSettimane(nome)">−</button>
                     <span class="settimane-val">{{ settimaneMap[nome] || 1 }}</span>
-                    <button class="settimane-btn" (click)="settimaneMap[nome] = (settimaneMap[nome]||1) + 1">+</button>
+                    <button class="settimane-btn" (click)="incSettimane(nome)">+</button>
                     <span class="settimane-unit">sett.</span>
                   </div>
                 </div>
@@ -291,6 +291,9 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     };
     this.TASK_SEQUENCE.forEach(n => { this.settimaneMap[n] = defaults[n] ?? 1; });
   }
+
+  decSettimane(nome: string): void { this.settimaneMap[nome] = Math.max(1, (this.settimaneMap[nome] || 1) - 1); }
+  incSettimane(nome: string): void { this.settimaneMap[nome] = (this.settimaneMap[nome] || 1) + 1; }
 
   Math = Math;
 

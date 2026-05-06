@@ -253,9 +253,9 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                   <div class="settimane-num">{{ i + 1 }}</div>
                   <div class="settimane-nome">{{ nome }}</div>
                   <div class="settimane-input-wrap">
-                    <button class="settimane-btn" (click)="settimaneMapReq[nome] = Math.max(1, (settimaneMapReq[nome]||1) - 1)">−</button>
+                    <button class="settimane-btn" (click)="decSettimaneReq(nome)">−</button>
                     <span class="settimane-val">{{ settimaneMapReq[nome] || 1 }}</span>
-                    <button class="settimane-btn" (click)="settimaneMapReq[nome] = (settimaneMapReq[nome]||1) + 1">+</button>
+                    <button class="settimane-btn" (click)="incSettimaneReq(nome)">+</button>
                     <span class="settimane-unit">sett.</span>
                   </div>
                 </div>
@@ -405,6 +405,9 @@ export class RichiesteComponent implements OnInit {
     };
     this.TASK_SEQUENCE_REQ.forEach(n => { this.settimaneMapReq[n] = defaults[n] ?? 1; });
   }
+
+  decSettimaneReq(nome: string): void { this.settimaneMapReq[nome] = Math.max(1, (this.settimaneMapReq[nome] || 1) - 1); }
+  incSettimaneReq(nome: string): void { this.settimaneMapReq[nome] = (this.settimaneMapReq[nome] || 1) + 1; }
 
   totalSettimaneReq(): number {
     return this.TASK_SEQUENCE_REQ.reduce((s, n) => s + (this.settimaneMapReq[n] || 1), 0);
