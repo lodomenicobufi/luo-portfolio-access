@@ -289,7 +289,8 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                         <input class="fi" type="date" [value]="t.dataInizio" disabled/></div>
                       <div class="fg"><label class="fl">Data Fine</label>
                         @if (auth.isEditor && !isTaskLocked(t)) {
-                          <input class="fi" type="date" [(ngModel)]="t.dataFine" (change)="updateTaskCascade(t)"/>
+                          <input class="fi" type="date" [(ngModel)]="t.dataFine"
+                            (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"/>
                         } @else {
                           <input class="fi" type="date" [value]="t.dataFine" disabled/>
                         }
@@ -894,7 +895,19 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
 
   ownerName(id: string): string { return this.users().find(u => u.id === id)?.name || '—'; }
-  fmtDate(d: string): string { if (!d) return '—'; return new Date(d).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'2-digit'}); }
+  fmtDate(d: string): string {
+    if (!d) return '—';
+    const date = new Date(d);
+    if (isNaN(date.getTime()) || date.getFullYear() < 2000) return '—';
+    return date.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  }
+
+  /** Restituisce la stringa ISO solo se l'anno è valido (>= 2000), altrimenti stringa vuota */
+  sanitizeDate(d: string): string {
+    if (!d) return '';
+    const date = new Date(d);
+    return (!isNaN(date.getTime()) && date.getFullYear() >= 2000) ? d : '';
+  }
   statoBadge(s: string): string { const m: Record<string,string>={'In corso':'bb','Completato':'bg','Pianificazione':'bgr','In attesa':'bo','Annullato':'br','On Hold':'bo'}; return 'badge '+(m[s]||'bgr'); }
   prioBadge(p: string): string { const m: Record<string,string>={'Critica':'prio-critica','Alta':'prio-alta','Media':'prio-media','Bassa':'prio-bassa'}; return 'badge '+(m[p]||'bgr'); }
   docBadge(d: string): string { const m: Record<string,string>={'totale':'bg','parziale':'bo','non necessaria':'bgr'}; return 'badge '+(m[d]||'bgr'); }
