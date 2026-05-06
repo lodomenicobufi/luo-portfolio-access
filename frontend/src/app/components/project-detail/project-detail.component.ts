@@ -267,47 +267,68 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
+            @if (tasks().length === 0) {
+              <div class="task-empty-state">
+                <div class="task-empty-icon">📋</div>
+                <div class="task-empty-title">Nessun task trovato</div>
+                <div class="task-empty-desc">I task non sono stati generati o il progetto è stato importato senza di essi.</div>
+                <button class="btn btn-p" (click)="generateTasks()" [disabled]="saving()">
+                  {{ saving() ? 'Generazione in corso…' : '⚡ Genera task' }}
+                </button>
+              </div>
+            }
             @for (t of tasks(); track t.id) {
               <div class="task-block" [class.task-locked]="isTaskLocked(t)" [class.task-done]="t.stato==='Completato'">
+
+                <!-- RIGA COMPATTA -->
                 <div class="task-block-header" (click)="toggleTaskExpand(t.id)">
-                  <div style="display:flex;align-items:center;gap:10px;flex:1">
-                    <div class="task-num">{{ getTaskOrdine(t) }}</div>
-                    <div>
-                      <div style="font-weight:700;font-size:14px">{{ t.nome }}</div>
-                      <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
-                        {{ fmtDate(t.dataInizio) }}
-                        @if (t.dataFine) { - {{ fmtDate(t.dataFine) }} }
-                        @if (isTaskLocked(t)) { <span style="color:var(--warning)"> In attesa del task precedente</span> }
-                      </div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:8px">
+                  <div class="task-num">{{ getTaskOrdine(t) }}</div>
+
+                  <div class="task-row-nome">{{ t.nome }}</div>
+
+                  <div class="task-row-dates" (click)="$event.stopPropagation()">
+                    <input class="task-date-input" type="date" [value]="t.dataInizio" disabled title="Data inizio"/>
+                    <span class="task-date-sep">→</span>
                     @if (auth.isEditor && !isTaskLocked(t)) {
-                      <select class="fi" style="width:auto;font-size:12px"
-                        [(ngModel)]="t.stato" (change)="updateTaskCascade(t)" (click)="$event.stopPropagation()">
+                      <input class="task-date-input task-date-editable" type="date"
+                        [(ngModel)]="t.dataFine"
+                        (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"
+                        title="Data fine"/>
+                    } @else {
+                      <input class="task-date-input" type="date" [value]="t.dataFine" disabled title="Data fine"/>
+                    }
+                  </div>
+
+                  @if (isTaskLocked(t)) {
+                    <span class="task-locked-label">⏳ In attesa</span>
+                  }
+
+                  <div class="task-row-subtask-count"
+                    [class.task-row-subtask-count-has]="getSubTasksForTask(t.id).length > 0">
+                    @if (getSubTasksForTask(t.id).length > 0) {
+                      {{ getSubTasksForTask(t.id).length }} sotto-task
+                    } @else {
+                      <span style="color:rgba(46,46,46,0.3)">nessun sotto-task</span>
+                    }
+                  </div>
+
+                  <div (click)="$event.stopPropagation()">
+                    @if (auth.isEditor && !isTaskLocked(t)) {
+                      <select class="fi task-stato-select"
+                        [(ngModel)]="t.stato" (change)="updateTaskCascade(t)">
                         @for (v of config()?.statiTask||[]; track v){ <option>{{v}}</option> }
                       </select>
                     } @else {
                       <span class="badge" [class]="taskBadge(t.stato)">{{ t.stato }}</span>
                     }
-                    <span style="color:var(--gray-400);font-size:12px">{{ expandedTaskId()===t.id ? '▾' : '▸' }}</span>
                   </div>
+
+                  <span class="task-chevron">{{ expandedTaskId()===t.id ? '▾' : '▸' }}</span>
                 </div>
 
+                <!-- CORPO ESPANSO: solo sotto-task -->
                 @if (expandedTaskId() === t.id) {
                   <div class="task-block-body">
-                    <div class="fr2" style="margin-bottom:16px">
-                      <div class="fg"><label class="fl">Data Inizio</label>
-                        <input class="fi" type="date" [value]="t.dataInizio" disabled/></div>
-                      <div class="fg"><label class="fl">Data Fine</label>
-                        @if (auth.isEditor && !isTaskLocked(t)) {
-                          <input class="fi" type="date" [(ngModel)]="t.dataFine" (change)="updateTaskCascade(t)"/>
-                        } @else {
-                          <input class="fi" type="date" [value]="t.dataFine" disabled/>
-                        }
-                      </div>
-                    </div>
-
                     <div class="sec-div">Sotto-task</div>
 
                     @if (auth.isEditor && !isTaskLocked(t)) {
@@ -346,7 +367,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                           </div>
                           <div style="display:flex;align-items:center;gap:8px">
                             <span class="badge" [class]="taskBadge(st.stato)">{{ st.stato }}</span>
-                            <span style="font-size:11px;color:var(--gray-400)">{{ expandedSubTaskId()===st.id ? 'v' : '>' }}</span>
+                            <span style="font-size:11px;color:var(--gray-400)">{{ expandedSubTaskId()===st.id ? '▾' : '▸' }}</span>
                           </div>
                         </div>
                         @if (expandedSubTaskId() === st.id) {
