@@ -300,7 +300,7 @@ declare var Chart: any;
                       <tr>
                         <td>
                           <strong>{{ r.titolo }}</strong>
-                          <div class="req-desc-preview">{{ r.descrizione | slice:0:50 }}{{ r.descrizione.length > 50 ? '…' : '' }}</div>
+                          <div class="req-desc-preview">{{ truncate(r.descrizione, 50) }}</div>
                         </td>
                         <td><span class="badge bgr">{{ r.buRiferimento || '—' }}</span></td>
                         @if (!isCurrentViewer()) { <td>{{ richiestaUser(r.richiedenteId) }}</td> }
@@ -737,6 +737,8 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   richiesteInValutazione = computed(() =>
     this.richieste().filter(r => r.stato === 'In valutazione').length
   );
+
+  truncate(s: string, n: number): string { if (!s) return ''; return s.length > n ? s.slice(0, n) + '…' : s; }
 
   statoColors: Record<string,string> = {
     'In corso':'#6EC0AA','Completato':'#2E2E2E','Pianificazione':'#B8D8CE',
