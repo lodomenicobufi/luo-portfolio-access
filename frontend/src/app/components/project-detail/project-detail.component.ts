@@ -255,6 +255,18 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
+            @if (tasks().length === 0) {
+              <div class="task-empty-state">
+                <div class="task-empty-icon">📋</div>
+                <div class="task-empty-title">Nessun task trovato</div>
+                <div class="task-empty-desc">
+                  I task non sono stati generati automaticamente o il progetto è stato importato senza di essi.
+                </div>
+                <button class="btn btn-p" (click)="generateTasks()" [disabled]="saving()">
+                  {{ saving() ? 'Generazione in corso…' : '⚡ Genera task' }}
+                </button>
+              </div>
+            }
             @for (t of tasks(); track t.id) {
               <div class="task-block" [class.task-locked]="isTaskLocked(t)" [class.task-done]="t.stato==='Completato'">
                 <div class="task-block-header" (click)="toggleTaskExpand(t.id)">
@@ -1077,6 +1089,24 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
     this.showToast('Data inizio task successivo aggiornata');
+  }
+
+  async generateTasks(): Promise<void> {
+    const p = this.project();
+    if (!p) return;
+    this.saving.set(true);
+    try {
+      const dataInizio = p.dataInizio || new Date().toISOString().split('T')[0];
+      await this.db.initProjectTasks(p.id, dataInizio);
+      const allTasks = await this.db.getTasks();
+      const projectTasks = allTasks.filter(t => t.projectId === p.id);
+      this.tasks.set(projectTasks);
+      projectTasks.forEach(t => this.initNewSubTask(t.id));
+      this.showToast('Task generati con successo');
+    } catch {
+      this.showToast('Errore nella generazione dei task');
+    }
+    this.saving.set(false);
   }
 
   initNewSubTask(taskId: string): void {
