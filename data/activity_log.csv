@@ -1,4 +1,5 @@
 id,timestamp,userId,action,entityType,entityId,entityName,projectId,projectName,field,oldValue,newValue,note
+log-1778073621454,2026-05-06T13:20:21.118Z,u1,update,checklist,Documento messa in produzione,Documento messa in produzione,_0vm1dik,222,completato,false,true,
 log-1778073618792,2026-05-06T13:20:18.429Z,u1,update,checklist,Analisi dei requisiti,Analisi dei requisiti,_0vm1dik,222,completato,false,true,
 log-1778073605839,2026-05-06T13:20:05.488Z,u1,update,checklist,Test,Test,_0vm1dik,222,nonNecessario,false,true,
 log-1778073509155,2026-05-06T13:18:28.783Z,u1,update,task,_qq5lvvc,TEMPI E STIME,_0vm1dik,222,stato,Completato,Completato,
