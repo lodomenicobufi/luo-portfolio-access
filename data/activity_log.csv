@@ -1,4 +1,5 @@
 id,timestamp,userId,action,entityType,entityId,entityName,projectId,projectName,field,oldValue,newValue,note
+log-1778053283659,2026-05-06T07:41:23.296Z,u1,update,project,_ji7jcq6,test,_ji7jcq6,test,dataInizio,2026-05-06,2026-05-07,
 log-1778053202394,2026-05-06T07:40:02.024Z,u1,update,task,_m32frw5,REQUISITI,_ji7jcq6,test,stato,Completato,Completato,
 log-1778053153152,2026-05-06T07:39:12.777Z,u1,update,task,_m32frw5,REQUISITI,_ji7jcq6,test,stato,Completato,Completato,
 log-1778053149331,2026-05-06T07:39:08.790Z,u1,update,task,_m32frw5,REQUISITI,_ji7jcq6,test,stato,Completato,Completato,
