@@ -615,44 +615,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         </div>
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
-
-        <!-- ══ MODAL AGGIORNAMENTO DATA INIZIO TASK SUCCESSIVO ══ -->
-        @if (confirmNextTask() && pendingNextTaskUpdate) {
-          <div class="mb">
-            <div class="modal" style="max-width:460px">
-              <div class="mh">
-                <div>
-                  <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">Pianificazione</div>
-                  <span class="mt">Aggiorna data inizio task successivo</span>
-                </div>
-              </div>
-              <div class="mbody">
-                <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 16px;line-height:1.6">
-                  Hai impostato la chiusura di <strong>{{ pendingNextTaskUpdate.task.nome }}</strong>
-                  al <strong>{{ fmtDate(pendingNextTaskUpdate.task.dataFine || '') }}</strong>.<br>
-                  Imposta la data di inizio per il task successivo
-                  <strong>{{ pendingNextTaskUpdate.nextTask.nome }}</strong>:
-                </p>
-                <div class="fg">
-                  <label class="fl">Data inizio {{ pendingNextTaskUpdate.nextTask.nome }}</label>
-                  <input class="fi" type="date"
-                    [value]="pendingNextTaskUpdate.suggestedStart"
-                    #nextStartInput
-                    [min]="pendingNextTaskUpdate.task.dataFine || ''" />
-                </div>
-                <div style="background:rgba(110,192,170,0.06);border:1px solid rgba(110,192,170,0.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:rgba(46,46,46,.6);margin-top:12px">
-                  Data suggerita: <strong>{{ fmtDate(pendingNextTaskUpdate.suggestedStart) }}</strong>
-                  (giorno successivo alla chiusura)
-                </div>
-              </div>
-              <div class="mfoot">
-                <button class="btn btn-p" (click)="applyNextTaskStart(nextStartInput.value)" [disabled]="saving()">
-                  {{ saving() ? 'Salvataggio…' : 'Conferma e aggiorna' }}
-                </button>
-              </div>
-            </div>
-          </div>
-        }
       }
     </div>
   `,
@@ -670,8 +632,6 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
 
   loading = signal(true);
   saving = signal(false);
-  confirmNextTask = signal(false);
-  pendingNextTaskUpdate: { task: Task; nextTask: Task; suggestedStart: string } | null = null;
   project = signal<Project | null>(null);
   allProjects = signal<Project[]>([]);
   tasks = signal<Task[]>([]);
@@ -1121,7 +1081,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const oldStato = old?.stato || '';
     const dataFineChanged = !!t.dataFine && t.dataFine !== old?.dataFine;
 
-    const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
+    let updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
     await this.db.logAction({
       userId: this.auth.currentUser()?.id || '',
       action: t.stato !== oldStato ? 'status_change' : 'update',
@@ -1129,36 +1089,25 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
       projectId: t.projectId, projectName: this.project()!.nome,
       field: 'stato', oldValue: oldStato, newValue: t.stato,
     });
-    this.tasks.set(updated);
-    updated.forEach(task => { this.initNewSubTask(task.id); });
-    this.showToast('Task aggiornato');
 
-    // Se dataFine è cambiata, proponi aggiornamento obbligatorio del task successivo
+    // Se dataFine è cambiata, aggiorna automaticamente la dataInizio del task successivo
     if (dataFineChanged) {
       const idx = SEQUENCE.indexOf(t.nome);
       if (idx >= 0 && idx < SEQUENCE.length - 1) {
         const nextNome = SEQUENCE[idx + 1];
-        const nextTask = this.tasks().find(x => x.nome === nextNome && x.projectId === t.projectId);
+        const nextTask = updated.find(x => x.nome === nextNome && x.projectId === t.projectId);
         if (nextTask) {
           const nextDay = new Date(t.dataFine!);
           nextDay.setDate(nextDay.getDate() + 1);
           const suggestedStart = nextDay.toISOString().split('T')[0];
-          this.pendingNextTaskUpdate = { task: t, nextTask, suggestedStart };
-          this.confirmNextTask.set(true);
+          updated = await this.db.updateTaskWithCascade(nextTask.id, { dataInizio: suggestedStart }, updated);
         }
       }
     }
-  }
 
-  async applyNextTaskStart(newStart: string): Promise<void> {
-    const p = this.pendingNextTaskUpdate;
-    this.confirmNextTask.set(false);
-    this.pendingNextTaskUpdate = null;
-    if (!p || !newStart) return;
-    const updated = await this.db.updateTaskWithCascade(p.nextTask.id, { dataInizio: newStart }, this.tasks());
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
-    this.showToast('Data inizio task successivo aggiornata');
+    this.showToast('Task aggiornato');
   }
 
   initNewSubTask(taskId: string): void {
