@@ -576,7 +576,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                       [style.left.px]="ganttBarLeft(t)"
                       [style.width.px]="ganttBarWidth(t)"
                       [title]="'Consuntivato: ' + fmtDate(t.dataInizio) + ' → ' + fmtDate(t.dataFine)">
-                      <span class="gantt-bar-label">{{ t.nome }}</span>
+                      <span class="gantt-bar-label">{{ getDeltaLabel(t) }}</span>
                     </div>
                   }
                   <!-- Barra IN CORSO (azzurra, da dataInizio a oggi) -->
@@ -585,7 +585,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                       [style.left.px]="ganttBarLeft(t)"
                       [style.width.px]="ganttBarWidthInProgress(t)"
                       [title]="'In corso dal: ' + fmtDate(t.dataInizio)">
-                      <span class="gantt-bar-label">{{ t.nome }}</span>
+                      <span class="gantt-bar-label">{{ getDeltaInCorsoLabel(t) }}</span>
                     </div>
                   }
                 </div>
@@ -823,6 +823,33 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
     const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
     return new Date(t.dataFine) <= forecastEnd;
+  }
+
+  // Etichetta delta per barra consuntivata
+  getDeltaLabel(t: Task): string {
+    if (!t.dataFine) return '';
+    const start = this.ganttStart();
+    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
+    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
+    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
+    const actualEnd = new Date(t.dataFine);
+    const deltaDays = Math.round((actualEnd.getTime() - forecastEnd.getTime()) / 86400000);
+    if (deltaDays === 0) return '✓ In tempo';
+    if (deltaDays > 0) return `+${deltaDays}gg ritardo`;
+    return `${deltaDays}gg anticipo`;
+  }
+
+  // Etichetta delta per task in corso (giorni rispetto alla fine previsionale)
+  getDeltaInCorsoLabel(t: Task): string {
+    const start = this.ganttStart();
+    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
+    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
+    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
+    const today = new Date();
+    const deltaDays = Math.round((today.getTime() - forecastEnd.getTime()) / 86400000);
+    if (deltaDays > 0) return `+${deltaDays}gg`;
+    if (deltaDays < 0) return `${Math.abs(deltaDays)}gg rimasti`;
+    return 'scade oggi';
   }
 
   calcTheoreticalStart(t: Task): Date {
