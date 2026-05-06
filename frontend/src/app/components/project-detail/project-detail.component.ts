@@ -476,7 +476,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                         <span class="chk-no-doc">—</span>
                       }
                     }
-                    @if (auth.isEditor) {
+                    @if (auth.isEditor && !getChecklistEntry(doc)?.completato) {
                       <button class="btn-nn"
                         [class.btn-nn-active]="getChecklistEntry(doc)?.nonNecessario"
                         (click)="toggleNonNecessario(doc, getChecklistEntry(doc))"
@@ -489,9 +489,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               }
             </div>
             <div class="chk-footer">
-              <div class="chk-footer-bar">
-                <div class="chk-footer-fill" [style.width.%]="(completatiCount() / (docTotale() || 1)) * 100"></div>
-              </div>
               <span>
                 {{ completatiCount() }} / {{ docTotale() }} documenti completati
                 @if (nonNecessarioCount() > 0) {
