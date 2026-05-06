@@ -403,7 +403,7 @@ button, input, select, textarea { font-family: inherit; }
 .icon-btn-sq.active { background: var(--ink); color: white; border-color: var(--ink); }
 
 /* ── PAGE CONTENT ──────────────────────────────────── */
-.page { display: flex; flex-direction: column; gap: 0; }
+.page { display: flex; flex-direction: column; gap: 10px; padding: 0; }
 .page-body { padding: 0; display: flex; flex-direction: column; gap: 10px; }
 
 .page-hdr {
@@ -1175,7 +1175,7 @@ select.fi {
 .tabs { display:flex; gap:2px; border-bottom:1px solid rgba(46,46,46,0.08); }
 .tab { font-size:13px; font-weight:500; padding:8px 16px; border:none; background:none; cursor:pointer; color:rgba(46,46,46,0.45); border-bottom:2px solid transparent; margin-bottom:-1px; transition:all .15s; }
 .tab.active { color:var(--mint-dd); border-bottom-color:var(--mint); }
-.tab-card { background:white; border:1px solid rgba(46,46,46,0.08); border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg); padding:20px; margin-bottom:16px; }
+.tab-card { background:white; border:1px solid rgba(46,46,46,0.08); border-top:none; border-radius:0 0 var(--r-lg) var(--r-lg); padding:20px; }
 .ticket-row { display:flex; gap:10px; padding:12px; border-radius:6px; background:var(--bg-soft); margin-bottom:8px; border-left:3px solid #6EC0AA; }
 .ticket-row.chiuso { border-left-color:#2E2E2E; opacity:.75; }
 .icon-btn-sm { background:none; border:none; cursor:pointer; font-size:14px; padding:2px 6px; }
@@ -1274,7 +1274,7 @@ select.fi {
 .bu-proj-pct { font-size:11px; font-weight:600; color:rgba(46,46,46,0.5); }
 
 /* ── Gantt ── */
-.gantt-card { overflow:hidden; margin-bottom:16px; }
+.gantt-card { overflow:hidden; }
 .gantt-wrap { display:flex; }
 .gantt-labels { flex-shrink:0; width:160px; padding-top:32px; border-right:1px solid rgba(46,46,46,0.08); }
 .gantt-label { height:40px; display:flex; align-items:center; gap:6px; padding:0 12px; font-size:11.5px; font-weight:500; color:rgba(46,46,46,0.6); white-space:nowrap; border-bottom:1px solid rgba(46,46,46,0.04); }
@@ -1756,7 +1756,7 @@ select.fi {
 .proj-split-row {
   display: grid;
   grid-template-columns: 1fr 2fr;
-  gap: 16px;
+  gap: 10px;
   align-items: stretch;
 }
 .proj-split-desc {

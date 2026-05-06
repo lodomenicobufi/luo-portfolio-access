@@ -219,7 +219,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         }
 
         <!-- LAYOUT DUE COLONNE: descrizione | dettagli -->
-        <div class="proj-split-row" style="margin-bottom:16px">
+        <div class="proj-split-row">
 
           <!-- Colonna sinistra: Descrizione -->
           @if (project()!.descrizione) {
