@@ -1750,11 +1750,12 @@ select.fi {
   display: grid;
   grid-template-columns: 1fr 2fr;
   gap: 16px;
-  align-items: start;
+  align-items: stretch;
 }
 .proj-split-desc {
   padding: 20px;
-  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 .proj-desc-text {
   font-size: 13.5px;
@@ -1762,7 +1763,10 @@ select.fi {
   line-height: 1.65;
   white-space: pre-wrap;
   margin-top: 8px;
+  flex: 1;
 }
 .proj-split-details {
-  min-width: 0; /* prevent overflow in grid */
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
 }

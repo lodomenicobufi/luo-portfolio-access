@@ -229,24 +229,17 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
             </div>
           }
 
-          <!-- Colonna destra: Dettagli (tabs) -->
-          <div class="card collapsible-card proj-split-details">
-            <div class="collapsible-hdr card-hdr" (click)="tabsOpen.set(!tabsOpen())">
-              <div class="collapsible-hdr-left">
-                <svg class="collapse-chevron" [class.open]="tabsOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-                <div class="card-title" style="font-size:14px">Dettagli</div>
-              </div>
-              <div style="display:flex;gap:4px" (click)="$event.stopPropagation()">
+          <!-- Colonna destra: Dettagli (tabs, sempre aperti) -->
+          <div class="card proj-split-details">
+            <div class="card-hdr" style="border-bottom:var(--bd);padding-bottom:12px;margin-bottom:0">
+              <div class="card-title" style="font-size:14px">Dettagli</div>
+              <div style="display:flex;gap:4px">
                 @for (t of getTabs(); track t.id) {
                   <button class="tab" [class.active]="activeTab()===t.id"
-                    (click)="activeTab.set(t.id); tabsOpen.set(true)">{{ t.label }}</button>
+                    (click)="activeTab.set(t.id)">{{ t.label }}</button>
                 }
               </div>
             </div>
-
-          @if (tabsOpen()) {
 
         @if (activeTab() === 'task') {
           <div class="tab-card">
@@ -525,7 +518,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           </div>
         }
 
-              }<!-- /tabsOpen -->
           </div><!-- /proj-split-details -->
         </div><!-- /proj-split-row -->
 
