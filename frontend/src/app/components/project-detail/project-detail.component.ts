@@ -489,14 +489,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               }
             </div>
             <div class="chk-footer">
-              <span>
-                {{ completatiCount() }} / {{ docTotale() }} documenti completati
-                @if (nonNecessarioCount() > 0) {
-                  <span style="color:rgba(46,46,46,0.45);font-size:11px">
-                    (di cui {{ nonNecessarioCount() }} non necessari)
-                  </span>
-                }
-              </span>
+              <span>{{ completatiCount() }} / {{ docTotale() }} documenti completati</span>
             </div>
           </div>
         }
