@@ -570,6 +570,40 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
         </div>
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
 
+        <!-- ══ MODAL CONFERMA AGGIORNAMENTO TASK SUCCESSIVO ══ -->
+        @if (confirmNextTask() && pendingNextTaskUpdate) {
+          <div class="mb">
+            <div class="modal" style="max-width:460px">
+              <div class="mh">
+                <div>
+                  <div style="font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--mint-dd);margin-bottom:2px">Pianificazione</div>
+                  <span class="mt">Aggiorna il task successivo?</span>
+                </div>
+              </div>
+              <div class="mbody">
+                <p style="font-size:13.5px;color:rgba(46,46,46,.7);margin:0 0 16px;line-height:1.6">
+                  Hai impostato la fine di <strong>{{ pendingNextTaskUpdate.task.nome }}</strong>
+                  al <strong>{{ fmtDate(pendingNextTaskUpdate.task.dataFine || '') }}</strong>.<br>
+                  Vuoi aggiornare la data di inizio di
+                  <strong>{{ pendingNextTaskUpdate.nextTask.nome }}</strong>
+                  al giorno successivo (<strong>{{ fmtDate(pendingNextTaskUpdate.suggestedStart) }}</strong>)?
+                </p>
+                <div style="background:rgba(110,192,170,0.06);border:1px solid rgba(110,192,170,0.2);border-radius:8px;padding:10px 14px;font-size:12.5px;color:rgba(46,46,46,.6)">
+                  Questo mantiene la sequenza dei task continua e il Gantt allineato.
+                </div>
+              </div>
+              <div class="mfoot">
+                <button class="btn btn-g" (click)="applyNextTaskStart(false)">
+                  No, lascia invariato
+                </button>
+                <button class="btn btn-p" (click)="applyNextTaskStart(true)">
+                  Sì, aggiorna
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- ══ MODAL CONFERMA CAMBIO DATA INIZIO ══ -->
         @if (confirmDataInizio()) {
           <div class="mb">
@@ -916,6 +950,8 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   showToast(msg: string) { this.toast.set(msg); setTimeout(() => this.toast.set(''), 3000); }
 
   confirmDataInizio = signal(false); // mostra il mini-modal di conferma cambio data inizio
+  confirmNextTask = signal(false);   // mostra il modal di conferma aggiornamento task successivo
+  pendingNextTaskUpdate: { task: Task; nextTask: Task; suggestedStart: string } | null = null;
 
   async saveProject(updateFirstTask?: boolean) {
     if (!this.project()) return;
@@ -995,8 +1031,11 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async updateTaskCascade(t: Task): Promise<void> {
+    const SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','COLLAUDO BU','PRODUZIONE','ADOPTION'];
     const old = this.tasks().find(x => x.id === t.id);
     const oldStato = old?.stato || '';
+    const dataFineChanged = t.dataFine && t.dataFine !== old?.dataFine;
+
     const updated = await this.db.updateTaskWithCascade(t.id, { stato: t.stato, dataFine: t.dataFine }, this.tasks());
     await this.db.logAction({
       userId: this.auth.currentUser()?.id || '',
@@ -1008,6 +1047,36 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     this.tasks.set(updated);
     updated.forEach(task => { this.initNewSubTask(task.id); });
     this.showToast('Task aggiornato');
+
+    // Se è cambiata la dataFine, proponi di aggiornare la dataInizio del task successivo
+    if (dataFineChanged) {
+      const idx = SEQUENCE.indexOf(t.nome);
+      if (idx >= 0 && idx < SEQUENCE.length - 1) {
+        const nextNome = SEQUENCE[idx + 1];
+        const nextTask = this.tasks().find(x => x.nome === nextNome && x.projectId === t.projectId);
+        if (nextTask) {
+          // Suggerisci il giorno dopo la dataFine come inizio del task successivo
+          const nextDay = new Date(t.dataFine!);
+          nextDay.setDate(nextDay.getDate() + 1);
+          const suggestedStart = nextDay.toISOString().split('T')[0];
+          this.pendingNextTaskUpdate = { task: t, nextTask, suggestedStart };
+          this.confirmNextTask.set(true);
+        }
+      }
+    }
+  }
+
+  async applyNextTaskStart(confirm: boolean): Promise<void> {
+    const p = this.pendingNextTaskUpdate;
+    this.confirmNextTask.set(false);
+    this.pendingNextTaskUpdate = null;
+    if (!confirm || !p) return;
+    const updated = await this.db.updateTaskWithCascade(
+      p.nextTask.id, { dataInizio: p.suggestedStart }, this.tasks()
+    );
+    this.tasks.set(updated);
+    updated.forEach(task => { this.initNewSubTask(task.id); });
+    this.showToast('Data inizio task successivo aggiornata');
   }
 
   initNewSubTask(taskId: string): void {
