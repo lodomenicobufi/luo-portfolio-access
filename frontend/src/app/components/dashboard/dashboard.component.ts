@@ -398,10 +398,10 @@ declare var Chart: any;
               }
             </div>
             <!-- Paginazione attività -->
-            @if (recentEvents().length > actPageSize()) {
+            @if (recentEvents().length > actPageSize) {
               <div class="pagination-bar" style="border-top:1px solid rgba(46,46,46,0.06)">
                 <div class="pagination-info">
-                  {{ (actPage()-1)*actPageSize()+1 }}–{{ minVal(actPage()*actPageSize(), recentEvents().length) }} di {{ recentEvents().length }}
+                  {{ (actPage()-1)*actPageSize+1 }}–{{ minVal(actPage()*actPageSize, recentEvents().length) }} di {{ recentEvents().length }}
                 </div>
                 <div class="pagination-nav">
                   <button class="page-btn" [disabled]="actPage()===1" (click)="actPage.set(actPage()-1)">‹</button>
