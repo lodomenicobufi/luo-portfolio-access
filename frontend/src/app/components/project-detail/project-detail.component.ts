@@ -232,7 +232,10 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           <!-- Colonna destra: Dettagli (tabs, sempre aperti) -->
           <div class="card proj-split-details">
             <div class="card-hdr" style="border-bottom:var(--bd);padding-bottom:12px;margin-bottom:0;align-items:center">
-              <div class="card-title" style="font-size:14px;font-weight:700">Dettagli</div>
+              <div>
+                <div class="card-eyebrow">Progetto</div>
+                <div class="card-title">Dettagli</div>
+              </div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 @for (t of getTabs(); track t.id) {
                   <button class="tab" [class.active]="activeTab()===t.id"
