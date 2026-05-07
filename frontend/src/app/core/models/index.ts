@@ -33,7 +33,9 @@ export interface Task {
   dataFine: string;
   stato: string;
   projectId: string;
-  settimaneStimate: number; // settimane previsionali inserite alla creazione
+  settimaneStimate: number;
+  dataInizioPrev: string; // data inizio previsionale calcolata dalle settimane
+  dataFinePrev: string;   // data fine previsionale calcolata dalle settimane
 }
 
 export interface ChecklistItem {

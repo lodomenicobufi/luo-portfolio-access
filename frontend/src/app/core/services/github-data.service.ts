@@ -200,7 +200,7 @@ export class GithubDataService {
   }
 
   async saveTasks(tasks: Task[]): Promise<void> {
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate','dataInizioPrev','dataFinePrev'];
     await this.writeFile('data/tasks.csv', this.toCsv(tasks, headers), 'Update tasks');
   }
 
@@ -344,17 +344,33 @@ export class GithubDataService {
     const allTasks = await this.getTasks();
     const existing = allTasks.filter(t => t.projectId === projectId);
     if (existing.length > 0) return;
-    const newTasks = SEQUENCE.map((nome, i) => ({
-      id: this.uid(),
-      nome,
-      dataInizio: i === 0 ? dataInizioProgetto : '',
-      dataFine: '',
-      stato: 'Da fare',
-      projectId,
-      settimaneStimate: settimaneMap?.[nome] ?? DEFAULT_SETTIMANE[nome] ?? 1,
-    }));
+
+    // Calcola date previsionali a cascata partendo dalla data inizio progetto
+    let cursor = new Date(dataInizioProgetto);
+    const newTasks = SEQUENCE.map((nome) => {
+      const settimane = settimaneMap?.[nome] ?? DEFAULT_SETTIMANE[nome] ?? 1;
+      const dataInizioPrev = cursor.toISOString().split('T')[0];
+      const fine = new Date(cursor);
+      fine.setDate(fine.getDate() + settimane * 7 - 1);
+      const dataFinePrev = fine.toISOString().split('T')[0];
+      // Aggiorna cursor per il task successivo
+      cursor = new Date(fine);
+      cursor.setDate(cursor.getDate() + 1);
+      return {
+        id: this.uid(),
+        nome,
+        dataInizio: '',
+        dataFine: '',
+        stato: 'Da fare',
+        projectId,
+        settimaneStimate: settimane,
+        dataInizioPrev,
+        dataFinePrev,
+      };
+    });
+
     const updated = [...allTasks, ...newTasks];
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate','dataInizioPrev','dataFinePrev'];
     await this.writeFile('data/tasks.csv', this.toCsv(updated, headers), 'Init tasks for project ' + projectId);
   }
 
@@ -383,9 +399,18 @@ export class GithubDataService {
       }
     }
 
-    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate'];
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate','dataInizioPrev','dataFinePrev'];
     await this.writeFile('data/tasks.csv', this.toCsv(allTasks, headers), 'Update task ' + updatedTask.nome);
     return allTasks.filter(t => t.projectId === updatedTask.projectId);
+  }
+
+  async updateTaskPrev(id: string, dataInizioPrev: string, dataFinePrev: string): Promise<void> {
+    const allTasks = await this.getTasks();
+    const idx = allTasks.findIndex(t => t.id === id);
+    if (idx < 0) return;
+    allTasks[idx] = { ...allTasks[idx], dataInizioPrev, dataFinePrev };
+    const headers = ['id','nome','dataInizio','dataFine','stato','projectId','settimaneStimate','dataInizioPrev','dataFinePrev'];
+    await this.writeFile('data/tasks.csv', this.toCsv(allTasks, headers), 'Update prev dates task ' + allTasks[idx].nome);
   }
 
   // ── RICHIESTE ────────────────────────────────────────────────────

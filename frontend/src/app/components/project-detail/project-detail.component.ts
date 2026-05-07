@@ -271,15 +271,34 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                   <div class="task-row-nome">{{ t.nome }}</div>
 
                   <div class="task-row-dates" (click)="$event.stopPropagation()">
-                    <input class="task-date-input" type="date" [value]="t.dataInizio" disabled title="Data inizio"/>
+                    <!-- Date previsionali -->
+                    <span class="task-date-label">Prev:</span>
+                    @if (auth.isEditor) {
+                      <input class="task-date-input task-date-prev" type="date"
+                        [value]="t.dataInizioPrev"
+                        (change)="updatePrevDate(t, 'inizio', $any($event.target).value)"
+                        title="Data inizio previsionale"/>
+                      <span class="task-date-sep">→</span>
+                      <input class="task-date-input task-date-prev" type="date"
+                        [value]="t.dataFinePrev"
+                        (change)="updatePrevDate(t, 'fine', $any($event.target).value)"
+                        title="Data fine previsionale"/>
+                    } @else {
+                      <input class="task-date-input" type="date" [value]="t.dataInizioPrev" disabled title="Inizio previsionale"/>
+                      <span class="task-date-sep">→</span>
+                      <input class="task-date-input" type="date" [value]="t.dataFinePrev" disabled title="Fine previsionale"/>
+                    }
+                    <!-- Date consuntivate -->
+                    <span class="task-date-label" style="margin-left:10px">Cons:</span>
+                    <input class="task-date-input" type="date" [value]="t.dataInizio" disabled title="Data inizio consuntivata"/>
                     <span class="task-date-sep">→</span>
                     @if (auth.isEditor && !isTaskLocked(t)) {
                       <input class="task-date-input task-date-editable" type="date"
                         [(ngModel)]="t.dataFine"
                         (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"
-                        title="Data fine — modificabile"/>
+                        title="Data fine consuntivata"/>
                     } @else {
-                      <input class="task-date-input" type="date" [value]="t.dataFine" disabled title="Data fine"/>
+                      <input class="task-date-input" type="date" [value]="t.dataFine" disabled title="Data fine consuntivata"/>
                     }
                   </div>
 
@@ -1059,6 +1078,17 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
+  async updatePrevDate(t: Task, campo: 'inizio' | 'fine', val: string): Promise<void> {
+    const date = this.sanitizeDate(val);
+    if (!date) return;
+    const inizio = campo === 'inizio' ? date : (t.dataInizioPrev || '');
+    const fine   = campo === 'fine'   ? date : (t.dataFinePrev || '');
+    await this.db.updateTaskPrev(t.id, inizio, fine);
+    const allTasks = await this.db.getTasks();
+    this.tasks.set(allTasks.filter(x => x.projectId === t.projectId));
+    this.showToast('Date previsionali aggiornate');
+  }
+
   async updateTaskCascade(t: Task): Promise<void> {
     const old = this.tasks().find(x => x.id === t.id);
     const oldStato = old?.stato || '';

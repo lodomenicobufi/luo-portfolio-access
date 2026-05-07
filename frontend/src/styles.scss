@@ -1952,3 +1952,19 @@ select.fi {
   &.active { background: var(--mint-dd); color: white; border-color: var(--mint-dd); font-weight: 600; }
   &:disabled { opacity: .35; cursor: default; }
 }
+
+/* ── DATE PREVISIONALI NEI TASK ──────────────────────── */
+.task-date-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: rgba(46,46,46,0.35);
+  flex-shrink: 0;
+}
+.task-date-prev {
+  background: rgba(200,208,216,0.15) !important;
+  border: 1px solid rgba(200,208,216,0.4) !important;
+  color: rgba(46,46,46,0.5) !important;
+  &:hover { background: rgba(200,208,216,0.3) !important; }
+}
