@@ -1,4 +1,5 @@
 id,timestamp,userId,action,entityType,entityId,entityName,projectId,projectName,field,oldValue,newValue,note
+log-1778152122681,2026-05-07T11:08:42.330Z,u1,update,task,_d9y9z2f,REQUISITI,_0c5ba45,test,stato,Da fare,Da fare,
 log-1778073822865,2026-05-06T13:23:42.542Z,u1,accept,richiesta,req-1778073794579,22,_bud68ev,22,,,Accettata,
 log-1778073795714,2026-05-06T13:23:15.395Z,u1,create,richiesta,req-1778073794579,22,,,,,,22
 log-1778073677107,2026-05-06T13:21:16.654Z,u1,update,checklist,Documento di progetto,Documento di progetto,_0vm1dik,222,completato,false,true,
