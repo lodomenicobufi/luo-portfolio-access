@@ -369,7 +369,7 @@ declare var Chart: any;
 
         <!-- BOTTOM REPORTS -->
         <div class="reports-grid">
-          <div class="card">
+          <div class="card" style="display:flex;flex-direction:column">
             <div class="card-hdr">
               <div>
                 <div class="card-eyebrow">Attività recenti</div>
@@ -377,8 +377,8 @@ declare var Chart: any;
               </div>
               <button class="btn btn-s btn-sm" (click)="goTo('/activities')">Vedi tutte →</button>
             </div>
-            <div class="activity-list">
-              @for (ev of recentEvents(); track ev.id) {
+            <div class="activity-list" style="flex:1">
+              @for (ev of actPaged(); track ev.id) {
                 <div class="activity-row">
                   <div class="av-bubble" [style.background]="ev.color">{{ ev.initials }}</div>
                   <div class="activity-body">
@@ -397,6 +397,21 @@ declare var Chart: any;
                 <div class="empty" style="padding:20px;font-size:13px;color:rgba(46,46,46,0.4)">Nessuna attività registrata</div>
               }
             </div>
+            <!-- Paginazione attività -->
+            @if (recentEvents().length > actPageSize()) {
+              <div class="pagination-bar" style="border-top:1px solid rgba(46,46,46,0.06)">
+                <div class="pagination-info">
+                  {{ (actPage()-1)*actPageSize()+1 }}–{{ minVal(actPage()*actPageSize(), recentEvents().length) }} di {{ recentEvents().length }}
+                </div>
+                <div class="pagination-nav">
+                  <button class="page-btn" [disabled]="actPage()===1" (click)="actPage.set(actPage()-1)">‹</button>
+                  @for (n of actPages(); track n) {
+                    <button class="page-btn" [class.active]="actPage()===n" (click)="actPage.set(n)">{{ n }}</button>
+                  }
+                  <button class="page-btn" [disabled]="actPage()===actTotalPages()" (click)="actPage.set(actPage()+1)">›</button>
+                </div>
+              </div>
+            }
           </div>
 
           <div class="card">
@@ -799,6 +814,13 @@ export class DashboardComponent implements OnInit, AfterViewInit {
     return all.slice((page - 1) * size, page * size);
   });
   reqTotalPages = computed(() => Math.max(1, Math.ceil(this.richiesteFiltered().length / this.reqPageSize())));
+
+  // Paginazione attività
+  actPage     = signal(1);
+  actPageSize = 5;
+  actPaged    = computed(() => this.recentEvents().slice((this.actPage()-1)*this.actPageSize, this.actPage()*this.actPageSize));
+  actTotalPages = computed(() => Math.max(1, Math.ceil(this.recentEvents().length / this.actPageSize)));
+  actPages(): number[] { return Array.from({length: this.actTotalPages()}, (_, i) => i + 1); }
 
   minVal(a: number, b: number): number { return Math.min(a, b); }
   projPages(): number[] { return Array.from({length: this.projTotalPages()}, (_, i) => i + 1); }
