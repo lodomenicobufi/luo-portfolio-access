@@ -284,13 +284,20 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                         (change)="updatePrevDate(t, 'fine', $any($event.target).value)"
                         title="Data fine previsionale"/>
                     } @else {
-                      <input class="task-date-input" type="date" [value]="t.dataInizioPrev" disabled title="Inizio previsionale"/>
+                      <input class="task-date-input" type="date" [value]="t.dataInizioPrev" disabled/>
                       <span class="task-date-sep">→</span>
-                      <input class="task-date-input" type="date" [value]="t.dataFinePrev" disabled title="Fine previsionale"/>
+                      <input class="task-date-input" type="date" [value]="t.dataFinePrev" disabled/>
                     }
                     <!-- Date consuntivate -->
                     <span class="task-date-label" style="margin-left:10px">Cons:</span>
-                    <input class="task-date-input" type="date" [value]="t.dataInizio" disabled title="Data inizio consuntivata"/>
+                    @if (auth.isEditor && !isTaskLocked(t)) {
+                      <input class="task-date-input task-date-editable" type="date"
+                        [(ngModel)]="t.dataInizio"
+                        (change)="t.dataInizio = sanitizeDate(t.dataInizio); saveTaskInizio(t)"
+                        title="Data inizio consuntivata"/>
+                    } @else {
+                      <input class="task-date-input" type="date" [value]="t.dataInizio" disabled/>
+                    }
                     <span class="task-date-sep">→</span>
                     @if (auth.isEditor && !isTaskLocked(t)) {
                       <input class="task-date-input task-date-editable" type="date"
@@ -298,7 +305,19 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                         (change)="t.dataFine = sanitizeDate(t.dataFine); updateTaskCascade(t)"
                         title="Data fine consuntivata"/>
                     } @else {
-                      <input class="task-date-input" type="date" [value]="t.dataFine" disabled title="Data fine consuntivata"/>
+                      <input class="task-date-input" type="date" [value]="t.dataFine" disabled/>
+                    }
+                    <!-- Indicatore ritardo partenza (solo primo task) -->
+                    @if (getTaskOrdine(t) === 1) {
+                      @if (getStartDelay(t) > 0) {
+                        <span class="task-delay-badge" title="Ritardo nella partenza rispetto al previsionale">
+                          +{{ getStartDelay(t) }}gg
+                        </span>
+                      } @else if (getStartDelay(t) < 0) {
+                        <span class="task-early-badge" title="Partenza anticipata rispetto al previsionale">
+                          {{ getStartDelay(t) }}gg
+                        </span>
+                      }
                     }
                   </div>
 
@@ -1078,6 +1097,21 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   }
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
+  async saveTaskInizio(t: Task): Promise<void> {
+    const updated = await this.db.updateTaskWithCascade(t.id, { dataInizio: t.dataInizio }, this.tasks());
+    this.tasks.set(updated);
+    updated.forEach(task => this.initNewSubTask(task.id));
+    this.showToast('Data inizio aggiornata');
+  }
+
+  getStartDelay(t: Task): number {
+    if (!t.dataInizio || !t.dataInizioPrev) return 0;
+    const cons = new Date(t.dataInizio);
+    const prev = new Date(t.dataInizioPrev);
+    if (isNaN(cons.getTime()) || isNaN(prev.getTime())) return 0;
+    return Math.round((cons.getTime() - prev.getTime()) / 86400000);
+  }
+
   async updatePrevDate(t: Task, campo: 'inizio' | 'fine', val: string): Promise<void> {
     const date = this.sanitizeDate(val);
     if (!date) return;
