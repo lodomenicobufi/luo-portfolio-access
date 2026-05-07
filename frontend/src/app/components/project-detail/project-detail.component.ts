@@ -232,10 +232,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           <!-- Colonna destra: Dettagli (tabs, sempre aperti) -->
           <div class="card proj-split-details">
             <div class="card-hdr" style="border-bottom:var(--bd);padding-bottom:12px;margin-bottom:0;align-items:center">
-              <div>
-                <div class="card-eyebrow">Progetto</div>
-                <div class="card-title">Dettagli</div>
-              </div>
+              <div class="card-title" style="font-size:14px;font-weight:700">Dettagli</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 @for (t of getTabs(); track t.id) {
                   <button class="tab" [class.active]="activeTab()===t.id"
@@ -606,23 +603,23 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
                     [style.width.px]="ganttForecastWidth(t)"
                     [title]="'Previsionale: ' + ganttForecastLabel(t)">
                   </div>
-                  <!-- Barra CONSUNTIVATA (completato: verde se anticipo, rosso se ritardo) -->
+                  <!-- Barra CONSUNTIVATA (completato: verde se entro dataFinePrev, rosso se oltre) -->
                   @if (t.stato === 'Completato' && t.dataInizio && t.dataFine) {
                     <div class="gantt-bar-actual"
                       [class.gantt-bar-early]="isEarly(t)"
                       [class.gantt-bar-late]="!isEarly(t)"
                       [style.left.px]="ganttBarLeft(t)"
                       [style.width.px]="ganttBarWidth(t)"
-                      [title]="'Consuntivato: ' + fmtDate(t.dataInizio) + ' → ' + fmtDate(t.dataFine)">
+                      [title]="'Cons: ' + fmtDate(t.dataInizio) + ' → ' + fmtDate(t.dataFine)">
                       <span class="gantt-bar-label">{{ getDeltaLabel(t) }}</span>
                     </div>
                   }
-                  <!-- Barra IN CORSO (azzurra, da dataInizio a oggi) -->
+                  <!-- Barra IN CORSO: da dataInizio cons a dataFinePrev -->
                   @if (t.stato === 'In corso' && t.dataInizio) {
                     <div class="gantt-bar-active"
                       [style.left.px]="ganttBarLeft(t)"
                       [style.width.px]="ganttBarWidthInProgress(t)"
-                      [title]="'In corso dal: ' + fmtDate(t.dataInizio)">
+                      [title]="'In corso dal: ' + fmtDate(t.dataInizio) + ' — scade: ' + fmtDate(t.dataFinePrev || '')">
                       <span class="gantt-bar-label">{{ getDeltaInCorsoLabel(t) }}</span>
                     </div>
                   }
@@ -826,7 +823,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return this.fmtDate(s.toISOString().split('T')[0]) + ' → ' + this.fmtDate(e.toISOString().split('T')[0]);
   }
 
-  // Posizione barra consuntivata (usa dataInizio reale)
+  // Posizione barra consuntivata (usa dataInizio cons reale)
   ganttBarLeft(t: Task): number {
     const start = this.ganttStart();
     const taskStart = t.dataInizio ? new Date(t.dataInizio) : start;
@@ -834,7 +831,7 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return Math.max(0, diff) * this.ganttDayW;
   }
 
-  // Larghezza barra consuntivata (dataInizio → dataFine)
+  // Larghezza barra consuntivata (dataInizio cons → dataFine cons)
   ganttBarWidth(t: Task): number {
     if (t.dataInizio && t.dataFine) {
       const s = new Date(t.dataInizio);
@@ -845,45 +842,38 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     return (t.settimaneStimate || 1) * 7 * this.ganttDayW;
   }
 
-  // Larghezza barra "in corso" (dataInizio → oggi)
+  // Larghezza barra "in corso": da dataInizio cons a dataFinePrev (scadenza previsionale)
   ganttBarWidthInProgress(t: Task): number {
     const s = new Date(t.dataInizio || new Date());
-    const e = new Date();
-    const days = Math.max(1, Math.ceil((e.getTime() - s.getTime()) / 86400000) + 1);
+    // Usa dataFinePrev come termine previsto, altrimenti oggi
+    const eDate = t.dataFinePrev ? new Date(t.dataFinePrev) : new Date();
+    const end = eDate > s ? eDate : new Date(); // almeno fino ad oggi
+    const days = Math.max(1, Math.ceil((end.getTime() - s.getTime()) / 86400000) + 1);
     return days * this.ganttDayW;
   }
 
-  // Completato prima della fine previsionale?
+  // Completato prima della dataFinePrev?
   isEarly(t: Task): boolean {
-    if (!t.dataFine) return false;
-    const start = this.ganttStart();
-    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
-    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
-    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
-    return new Date(t.dataFine) <= forecastEnd;
+    if (!t.dataFine || !t.dataFinePrev) return false;
+    return new Date(t.dataFine) <= new Date(t.dataFinePrev);
   }
 
   // Etichetta delta per barra consuntivata
   getDeltaLabel(t: Task): string {
-    if (!t.dataFine) return '';
-    const start = this.ganttStart();
-    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
-    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
-    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
-    const actualEnd = new Date(t.dataFine);
-    const deltaDays = Math.round((actualEnd.getTime() - forecastEnd.getTime()) / 86400000);
+    if (!t.dataFine || !t.dataFinePrev) return '';
+    const deltaDays = Math.round(
+      (new Date(t.dataFine).getTime() - new Date(t.dataFinePrev).getTime()) / 86400000
+    );
     if (deltaDays === 0) return '✓';
     return (deltaDays > 0 ? '+' : '') + deltaDays + 'gg';
   }
 
-  // Etichetta delta per task in corso (giorni rispetto alla fine previsionale)
+  // Etichetta delta per task in corso (giorni rispetto alla dataFinePrev)
   getDeltaInCorsoLabel(t: Task): string {
-    const start = this.ganttStart();
-    const leftDays = this.ganttForecastLeft(t) / (this.ganttDayW || 1);
-    const widthDays = this.ganttForecastWidth(t) / (this.ganttDayW || 1);
-    const forecastEnd = new Date(start.getTime() + (leftDays + widthDays) * 86400000);
-    const today = new Date();
-    const deltaDays = Math.round((today.getTime() - forecastEnd.getTime()) / 86400000);
+    if (!t.dataFinePrev) return '';
+    const deltaDays = Math.round(
+      (new Date().getTime() - new Date(t.dataFinePrev).getTime()) / 86400000
+    );
     if (deltaDays === 0) return '✓';
     return (deltaDays > 0 ? '+' : '') + deltaDays + 'gg';
   }
@@ -1093,10 +1083,13 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
   toggleTaskExpand(id: string): void { this.expandedTaskId.set(this.expandedTaskId()===id?'':id); }
   toggleSubTaskExpand(id: string): void { this.expandedSubTaskId.set(this.expandedSubTaskId()===id?'':id); }
   async saveTaskInizio(t: Task): Promise<void> {
-    const updated = await this.db.updateTaskWithCascade(t.id, { dataInizio: t.dataInizio }, this.tasks());
+    if (!t.dataInizio) return;
+    // Se il task era Da fare, portalo automaticamente In corso
+    const newStato = (t.stato === 'Da fare') ? 'In corso' : t.stato;
+    const updated = await this.db.updateTaskWithCascade(t.id, { dataInizio: t.dataInizio, stato: newStato }, this.tasks());
     this.tasks.set(updated);
     updated.forEach(task => this.initNewSubTask(task.id));
-    this.showToast('Data inizio aggiornata');
+    this.showToast('Task avviato');
   }
 
   getStartDelay(t: Task): number {
