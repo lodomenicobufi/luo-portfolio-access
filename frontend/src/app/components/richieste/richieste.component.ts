@@ -71,7 +71,7 @@ type ModalMode = 'nuova' | 'accetta' | 'respingi' | 'post-accetta' | null;
                     <tr>
                       <td>
                         <strong>{{ r.titolo }}</strong>
-                        <div class="req-desc-preview">{{ r.descrizione | slice:0:60 }}{{ r.descrizione.length > 60 ? '…' : '' }}</div>
+                        <div class="req-desc-preview">{{ truncate(r.descrizione, 60) }}</div>
                       </td>
                       <td><span class="badge bgr">{{ r.buRiferimento || '—' }}</span></td>
                       <td class="req-progrif">{{ progettoNome(r.progettoRiferimento) }}</td>
@@ -387,6 +387,8 @@ export class RichiesteComponent implements OnInit {
   modal          = signal<ModalMode>(null);
   selectedReq    = signal<Richiesta | null>(null);
   createdProject = signal<Project | null>(null);
+
+  truncate(s: string, n: number): string { if (!s) return ''; return s.length > n ? s.slice(0, n) + '…' : s; }
 
   filtroStato  = '';
   noteRespinta = '';

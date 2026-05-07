@@ -72,7 +72,7 @@ import { Project, User, AppConfig } from '../../core/models';
                     <td>
                       <strong>{{ p.nome }}</strong>
                       @if (p.descrizione) {
-                        <div class="req-desc-preview">{{ p.descrizione | slice:0:70 }}{{ p.descrizione.length > 70 ? '…' : '' }}</div>
+                        <div class="req-desc-preview">{{ truncate(p.descrizione, 70) }}</div>
                       }
                     </td>
                     <td><span class="badge bp">{{ p.tipologia }}</span></td>
@@ -308,6 +308,8 @@ export class ProjectsComponent implements OnInit, OnDestroy {
     d.setDate(d.getDate() + this.totalSettimane() * 7);
     return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
+
+  truncate(s: string, n: number): string { if (!s) return ''; return s.length > n ? s.slice(0, n) + '…' : s; }
 
   statoColors: Record<string, string> = {
     'In corso':       '#6EC0AA',
