@@ -224,12 +224,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           <!-- Colonna sinistra: Descrizione -->
           @if (project()!.descrizione) {
             <div class="card proj-split-desc">
-              <div class="card-hdr" style="margin-bottom:8px">
-                <div>
-                  <div class="card-eyebrow">Progetto</div>
-                  <div class="card-title">Descrizione</div>
-                </div>
-              </div>
+              <div class="card-eyebrow" style="margin-bottom:6px">Descrizione</div>
               <div class="proj-desc-text">{{ project()!.descrizione }}</div>
             </div>
           }
@@ -237,10 +232,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
           <!-- Colonna destra: Dettagli (tabs, sempre aperti) -->
           <div class="card proj-split-details">
             <div class="card-hdr" style="border-bottom:var(--bd);padding-bottom:12px;margin-bottom:0;align-items:center">
-              <div>
-                <div class="card-eyebrow">Progetto</div>
-                <div class="card-title">Dettagli</div>
-              </div>
+              <div class="card-title" style="font-size:14px;font-weight:700">Dettagli</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 @for (t of getTabs(); track t.id) {
                   <button class="tab" [class.active]="activeTab()===t.id"
