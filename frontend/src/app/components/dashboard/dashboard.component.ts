@@ -215,9 +215,9 @@ declare var Chart: any;
                   </tr>
                 </thead>
                 <tbody>
-                  @for (p of filtered(); track p.id; let i = $index) {
+                  @for (p of projPaged(); track p.id; let i = $index) {
                     <tr class="cp" [routerLink]="['/projects', p.id]">
-                      <td class="tbl-num">{{ (i + 1).toString().padStart(2, '0') }}</td>
+                      <td class="tbl-num">{{ ((projPage()-1)*projPageSize() + i + 1).toString().padStart(2, '0') }}</td>
                       <td>
                         <div class="tbl-nome">{{ p.nome }}</div>
                         <div class="tbl-sub">{{ p.tipologia }}</div>
@@ -258,6 +258,26 @@ declare var Chart: any;
                 </tbody>
               </table>
             </div>
+            <!-- Paginazione progetti -->
+            <div class="pagination-bar">
+              <div class="pagination-info">
+                {{ (projPage()-1)*projPageSize()+1 }}–{{ minVal(projPage()*projPageSize(), filtered().length) }} di {{ filtered().length }}
+              </div>
+              <div class="pagination-size">
+                <span>Per pagina:</span>
+                @for (s of [5,10,20]; track s) {
+                  <button class="page-size-btn" [class.active]="projPageSize()===s"
+                    (click)="projPageSize.set(s); projPage.set(1)">{{ s }}</button>
+                }
+              </div>
+              <div class="pagination-nav">
+                <button class="page-btn" [disabled]="projPage()===1" (click)="projPage.set(projPage()-1)">‹</button>
+                @for (n of projPages(); track n) {
+                  <button class="page-btn" [class.active]="projPage()===n" (click)="projPage.set(n)">{{ n }}</button>
+                }
+                <button class="page-btn" [disabled]="projPage()===projTotalPages()" (click)="projPage.set(projPage()+1)">›</button>
+              </div>
+            </div>
           }
         </div>
 
@@ -296,7 +316,7 @@ declare var Chart: any;
                     </tr>
                   </thead>
                   <tbody>
-                    @for (r of richiesteFiltered(); track r.id) {
+                    @for (r of reqPaged(); track r.id) {
                       <tr>
                         <td>
                           <strong>{{ r.titolo }}</strong>
@@ -322,6 +342,26 @@ declare var Chart: any;
                     }
                   </tbody>
                 </table>
+              </div>
+              <!-- Paginazione richieste -->
+              <div class="pagination-bar">
+                <div class="pagination-info">
+                  {{ (reqPage()-1)*reqPageSize()+1 }}–{{ minVal(reqPage()*reqPageSize(), richiesteFiltered().length) }} di {{ richiesteFiltered().length }}
+                </div>
+                <div class="pagination-size">
+                  <span>Per pagina:</span>
+                  @for (s of [5,10,20]; track s) {
+                    <button class="page-size-btn" [class.active]="reqPageSize()===s"
+                      (click)="reqPageSize.set(s); reqPage.set(1)">{{ s }}</button>
+                  }
+                </div>
+                <div class="pagination-nav">
+                  <button class="page-btn" [disabled]="reqPage()===1" (click)="reqPage.set(reqPage()-1)">‹</button>
+                  @for (n of reqPages(); track n) {
+                    <button class="page-btn" [class.active]="reqPage()===n" (click)="reqPage.set(n)">{{ n }}</button>
+                  }
+                  <button class="page-btn" [disabled]="reqPage()===reqTotalPages()" (click)="reqPage.set(reqPage()+1)">›</button>
+                </div>
               </div>
             }
           }
@@ -737,6 +777,32 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   richiesteInValutazione = computed(() =>
     this.richieste().filter(r => r.stato === 'In valutazione').length
   );
+
+  // Paginazione progetti
+  projPage     = signal(1);
+  projPageSize = signal(5);
+  projPaged    = computed(() => {
+    const all = this.filtered();
+    const size = this.projPageSize();
+    const page = this.projPage();
+    return all.slice((page - 1) * size, page * size);
+  });
+  projTotalPages = computed(() => Math.max(1, Math.ceil(this.filtered().length / this.projPageSize())));
+
+  // Paginazione richieste
+  reqPage     = signal(1);
+  reqPageSize = signal(5);
+  reqPaged    = computed(() => {
+    const all = this.richiesteFiltered();
+    const size = this.reqPageSize();
+    const page = this.reqPage();
+    return all.slice((page - 1) * size, page * size);
+  });
+  reqTotalPages = computed(() => Math.max(1, Math.ceil(this.richiesteFiltered().length / this.reqPageSize())));
+
+  minVal(a: number, b: number): number { return Math.min(a, b); }
+  projPages(): number[] { return Array.from({length: this.projTotalPages()}, (_, i) => i + 1); }
+  reqPages(): number[] { return Array.from({length: this.reqTotalPages()}, (_, i) => i + 1); }
 
   truncate(s: string, n: number): string { if (!s) return ''; return s.length > n ? s.slice(0, n) + '…' : s; }
 
