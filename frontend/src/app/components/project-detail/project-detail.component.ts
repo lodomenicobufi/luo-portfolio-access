@@ -231,7 +231,7 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
 
           <!-- Colonna destra: Dettagli (tabs, sempre aperti) -->
           <div class="card proj-split-details">
-            <div class="card-hdr" style="border-bottom:var(--bd);padding-bottom:12px;margin-bottom:0;align-items:center">
+            <div class="card-hdr" style="padding:16px 20px 12px;margin-bottom:0;align-items:center;border-bottom:1px solid rgba(46,46,46,0.06)">
               <div class="card-title" style="font-size:14px;font-weight:700">Dettagli</div>
               <div style="display:flex;gap:6px;flex-wrap:wrap">
                 @for (t of getTabs(); track t.id) {
@@ -627,6 +627,33 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               }
             </div>
           </div>
+            </div>
+          </div>
+          <!-- Footer avanzamento complessivo -->
+          <div class="gantt-footer">
+            <div class="gantt-footer-left">
+              <span class="gantt-footer-label">Avanzamento complessivo</span>
+              <div class="gantt-footer-bar">
+                <div class="gantt-footer-fill" [style.width.%]="ganttOverallProgress()"></div>
+              </div>
+              <span class="gantt-footer-pct">{{ ganttOverallProgress() }}%</span>
+            </div>
+            <div class="gantt-footer-right">
+              @if (ganttOverallDelta() !== 0) {
+                <span class="gantt-footer-delta"
+                  [class.gantt-footer-delta-late]="ganttOverallDelta() > 0"
+                  [class.gantt-footer-delta-early]="ganttOverallDelta() < 0">
+                  {{ ganttOverallDelta() > 0 ? '+' : '' }}{{ ganttOverallDelta() }}gg
+                  {{ ganttOverallDelta() > 0 ? 'di ritardo' : 'di anticipo' }}
+                </span>
+              } @else if (ganttOverallProgress() > 0) {
+                <span class="gantt-footer-delta gantt-footer-delta-ok">✓ In tempo</span>
+              }
+              <span class="gantt-footer-tasks">
+                {{ ganttCompletedCount() }}/{{ tasks().length }} task completati
+              </span>
+            </div>
+          </div>
         </div>
         @if (toast()) { <div class="toast ok">{{ toast() }}</div> }
       }
@@ -876,6 +903,36 @@ export class ProjectDetailComponent implements OnInit, AfterViewInit, OnDestroy 
     );
     if (deltaDays === 0) return '✓';
     return (deltaDays > 0 ? '+' : '') + deltaDays + 'gg';
+  }
+
+  ganttCompletedCount(): number {
+    return this.tasks().filter(t => t.stato === 'Completato').length;
+  }
+
+  ganttOverallProgress(): number {
+    const total = this.tasks().length;
+    if (total === 0) return 0;
+    return Math.round((this.ganttCompletedCount() / total) * 100);
+  }
+
+  // Delta complessivo: somma dei giorni di ritardo/anticipo sui task completati
+  // confrontando dataFine consuntivata vs dataFinePrev
+  ganttOverallDelta(): number {
+    const completed = this.tasks().filter(t => t.stato === 'Completato' && t.dataFine && t.dataFinePrev);
+    if (completed.length === 0) {
+      // Se ci sono task in corso, calcola il ritardo sull'ultimo task in corso
+      const inCorso = this.tasks().find(t => t.stato === 'In corso' && t.dataFinePrev);
+      if (inCorso) {
+        const delta = Math.round((new Date().getTime() - new Date(inCorso.dataFinePrev!).getTime()) / 86400000);
+        return delta > 0 ? delta : 0;
+      }
+      return 0;
+    }
+    // Media dei delta sui task completati
+    const totalDelta = completed.reduce((sum, t) => {
+      return sum + Math.round((new Date(t.dataFine!).getTime() - new Date(t.dataFinePrev!).getTime()) / 86400000);
+    }, 0);
+    return Math.round(totalDelta / completed.length);
   }
 
   calcTheoreticalStart(t: Task): Date {
