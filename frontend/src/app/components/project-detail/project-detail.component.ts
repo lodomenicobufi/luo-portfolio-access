@@ -627,8 +627,6 @@ const TASK_SEQUENCE = ['REQUISITI','TEMPI E STIME','SVILUPPO','COLLAUDO LDT','CO
               }
             </div>
           </div>
-            </div>
-          </div>
           <!-- Footer avanzamento complessivo -->
           <div class="gantt-footer">
             <div class="gantt-footer-left">
